@@ -1,0 +1,11 @@
+*.zip
+.vscode
+.idea
+*.iml
+*.ipr
+*.iws
+.project
+target/
+*.csv
+.classpath
+.settings/

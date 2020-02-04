@@ -1,0 +1,21 @@
+{
+  "embedded": {
+    "Test1": {
+      "key1": "value1",
+      "key2": "value2"
+    },
+    "Test2": {
+      "key3": "value3",
+      "key4": "value4"
+    },
+    "FilterTest": "filter1"
+  },
+  "embedded": {
+    "Test3": {
+      "key5": "fail",
+      "key6": "fail"
+    }
+  }
+}
+
+
