@@ -117,9 +117,11 @@ public class MongoDbClientTest {
 
         CsvFile.jsonize(filename, fields,true, "test1", ",", queue);
 
-        while (queue.size() > 0) {
-            Thread.sleep(100);
+        while (!queue.isEmpty()) {
+            Thread.sleep(1000);
         }
+
+        Thread.sleep(5000);
 
         JSONArray jsonObject = new JSONArray(new String(mongo.selectJson("test1")));
         int actual = jsonObject.length();
