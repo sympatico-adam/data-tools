@@ -21,12 +21,9 @@ import org.sympatico.data.client.file.CsvFile;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import static com.mongodb.client.model.Filters.eq;
 

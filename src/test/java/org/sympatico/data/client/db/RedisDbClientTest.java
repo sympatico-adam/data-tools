@@ -4,18 +4,16 @@ import ai.grakn.redismock.RedisServer;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.resource.ClientResources;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bson.Document;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.sympatico.data.client.db.redis.RedisDbClient;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.regex.Pattern;
 
 public class RedisDbClientTest {
 

@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
@@ -27,8 +26,7 @@ public class CsvFile {
         LOG.info("Reading file: " + filename);
         File inputFile = new File(filename);
         File tempFile = File.createTempFile("csvfile", ".tmp");
-        //tempFile.deleteOnExit();
-        System.out.println("Temp file: " + tempFile.getAbsolutePath());
+        tempFile.deleteOnExit();
         normalize(inputFile, tempFile);
         Pattern splitter = Pattern.compile(regex);
         try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(tempFile)))) {
@@ -51,7 +49,6 @@ public class CsvFile {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         LOG.info("File loading completed for " + key );
     }
 
@@ -61,17 +58,11 @@ public class CsvFile {
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile)))) {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                try {
-                    line.replace("\"", "").replace("\r\n", "\n").replace("\r", "\n");
-                    bufferedWriter.write(line + "\n");
-                } catch (Exception e) {
-                    System.out.println("Unable to normalize line: " + line);
-                    e.printStackTrace();
-                }
+                line.replace("\"", "").replace("\r\n", "\n").replace("\r", "\n");
+                bufferedWriter.write(line + "\n");
             }
             bufferedWriter.flush();
         }
-        System.out.println("Line count: " + count);
     }
 
 }
