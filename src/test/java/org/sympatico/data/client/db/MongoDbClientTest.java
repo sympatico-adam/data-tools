@@ -21,12 +21,9 @@ import org.sympatico.data.client.file.CsvFile;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -102,10 +99,16 @@ public class MongoDbClientTest {
         DbClientRunner runner = new DbClientRunner(mongo, queue);
         runner.run(4);
 
-        Map<String, Integer> fields = new HashMap<>();
-        fields.put("id", 1);
-        fields.put("rating", 2);
-        String filename = MongoDbClientTest.class.getClassLoader().getResource("ratings_small.csv").getPath();
+        Map<String, Integer> map = new HashMap<>();
+        map.put("id", 5);
+        map.put("title", 20);
+        map.put("budget", 2);
+        map.put("genres", 3);
+        map.put("popularity", 10);
+        map.put("companies", 12);
+        map.put("date", 14);
+        map.put("revenue", 15);
+        String filename = MongoDbClientTest.class.getClassLoader().getResource("movies_metadata_small.csv").getPath();
 
         File file = new File(filename);
         int lineCount = 0;
@@ -115,14 +118,20 @@ public class MongoDbClientTest {
                 lineCount++;
         }
 
-        CsvFile.jsonize(filename, fields,true, "test1", ",", queue);
+        CsvFile.jsonize(filename, map,true, "test1", config.getProperty("csv.regex"), queue);
 
-        while (queue.size() > 0) {
-            Thread.sleep(100);
+        while (!queue.isEmpty()) {
+            Thread.sleep(1000);
         }
+
+        Thread.sleep(5000);
 
         JSONArray jsonObject = new JSONArray(new String(mongo.selectJson("test1")));
         int actual = jsonObject.length();
+
+        for (int i = 0; i < jsonObject.length(); i++) {
+            System.out.println(jsonObject.getString(i));
+        }
 
         Assert.assertEquals(lineCount, actual);
     }

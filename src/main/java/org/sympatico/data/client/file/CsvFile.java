@@ -24,17 +24,12 @@ public class CsvFile {
                                String regex,
                                ConcurrentLinkedQueue<Pair<String, byte[]>> queue) throws IOException {
         LOG.info("Reading file: " + filename);
-        File file = new File(filename);
+        File inputFile = new File(filename);
+        File tempFile = File.createTempFile("csvfile", ".tmp");
+        //tempFile.deleteOnExit();
+        normalize(inputFile, tempFile);
         Pattern splitter = Pattern.compile(regex);
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
-            String line;
-            if (hasHeader)
-                br.readLine(); // remove header
-            while ((line = br.readLine()) != null) {
-                line.replace("\"", "").replace("\n", "\r").replace("\t", "\f");
-            }
-        }
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(tempFile)))) {
             String line;
             if (hasHeader)
                 br.readLine(); // remove header
@@ -44,17 +39,30 @@ public class CsvFile {
                 for (Map.Entry<String, Integer> entry : fields.entrySet()) {
                     try {
                         json.put(entry.getKey(), split[entry.getValue()]);
-                    } catch (ArrayIndexOutOfBoundsException e) {
+                    } catch (ArrayIndexOutOfBoundsException | JSONException e) {
                         e.printStackTrace();
+                        LOG.error("Failed to parse line: " + entry.getValue());
                     }
                 }
                 queue.add(new ImmutablePair<>(key, json.toString().getBytes(StandardCharsets.UTF_8)));
             }
-        } catch (JSONException | IOException e) {
-            LOG.error("Unable to format json: " + e);
+        } catch (Exception e) {
             e.printStackTrace();
         }
         LOG.info("File loading completed for " + key );
+    }
+
+    private static void normalize(File inputFile, File tempFile) throws IOException {
+        BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tempFile)));
+        int count = 0;
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile)))) {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                bufferedWriter.write(
+                        line.replace("\"", "").replace("\r\n", "\n").replace("\r", "\n") + "\n");
+            }
+            bufferedWriter.flush();
+        }
     }
 
 }
