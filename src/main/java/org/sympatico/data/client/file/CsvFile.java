@@ -13,17 +13,14 @@ public class CsvFile {
 
     private static final Logger LOG  = LoggerFactory.getLogger(CsvFile.class);
 
-    private static final String TEMP_FILE_NAME = "csv-temp-file";
-    private static final String TEMP_FILE_SUFFIX = ".tmp";
-
-    public static long jsonize(String inputFilename,
+    public static long jsonize(String inputPath,
                                Map<String, Integer> fields,
                                String regex,
                                String outputPath) throws IOException {
-        LOG.info("Jsonizing file: " + inputFilename);
+        LOG.info("Jsonizing file: " + inputPath);
         long lineCount = 0L;
         Pattern splitter = Pattern.compile(regex);
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFilename)));
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputPath)));
             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath)))) {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
@@ -45,12 +42,12 @@ public class CsvFile {
         return lineCount;
     }
 
-    public static long writeNormalizedFile(String inputFilePath, String outputFilePath)
+    public static long writeNormalizedFile(String inputPath, String outputPath)
             throws IOException {
-        LOG.info("Normalizing file: " + inputFilePath);
+        LOG.info("Normalizing file: " + inputPath);
         long lineCount = 0L;
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFilePath)));
-             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFilePath)))) {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputPath)));
+             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath)))) {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 lineCount++;

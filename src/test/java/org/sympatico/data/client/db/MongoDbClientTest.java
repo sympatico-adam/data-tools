@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -114,12 +115,13 @@ public class MongoDbClientTest {
         map.put("companies", 12);
         map.put("date", 14);
         map.put("revenue", 15);
-        String inputFilePath = MongoDbClientTest.class.getClassLoader().getResource("movies_metadata_small.csv").getPath();
+        String inputPath = Objects.requireNonNull(
+                MongoDbClientTest.class.getClassLoader().getResource("movies_metadata_small.csv")).getPath();
         File tempFile = File.createTempFile("test-csv-file", ",tmp");
         File outFile = File.createTempFile("test-csv-file", ",tmp");
         tempFile.deleteOnExit();
         outFile.deleteOnExit();
-        long normalizedLineCount = CsvFile.writeNormalizedFile(inputFilePath, tempFile.getAbsolutePath());
+        long normalizedLineCount = CsvFile.writeNormalizedFile(inputPath, tempFile.getAbsolutePath());
         long parsedLineCount = CsvFile.jsonize(tempFile.getAbsolutePath(), map, config.getProperty("csv.regex"), outFile.getAbsolutePath());
         Assert.assertEquals(normalizedLineCount, parsedLineCount);
         long actualCount = 0L;

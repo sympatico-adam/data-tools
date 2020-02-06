@@ -37,12 +37,12 @@ public class CsvFileTest {
         map.put("date", 14);
         map.put("revenue", 15);
         String regex = config.getProperty("csv.regex");
-        String inputFilePath = config.getProperty("csv.file");
+        String inputPath = config.getProperty("csv.file");
         File tempFile = File.createTempFile("test-csv-file", ",tmp");
         File outFile = File.createTempFile("test-csv-file", ",tmp");
         tempFile.deleteOnExit();
         outFile.deleteOnExit();
-        long normalizedLineCount = CsvFile.writeNormalizedFile(inputFilePath, tempFile.getAbsolutePath());
+        long normalizedLineCount = CsvFile.writeNormalizedFile(inputPath, tempFile.getAbsolutePath());
         long parsedLineCount = CsvFile.jsonize(tempFile.getAbsolutePath(), map, regex, outFile.getAbsolutePath());
         Assert.assertEquals(normalizedLineCount, parsedLineCount);
         long actualCount = 0L;
@@ -59,14 +59,14 @@ public class CsvFileTest {
         Map<String, Integer> map = new HashMap<>();
         map.put("id", 1);
         map.put("rating", 2);
-        String inputFilePath = "ratings_small.csv";
+        String inputPath = "ratings_small.csv";
         File tempFile = File.createTempFile("test-csv-file", ",tmp");
         File outFile = File.createTempFile("test-csv-file", ",tmp");
         tempFile.deleteOnExit();
         outFile.deleteOnExit();
         long normalizedLineCount =
                 CsvFile.writeNormalizedFile(
-                        Objects.requireNonNull(CsvFileTest.class.getClassLoader().getResource(inputFilePath)).getPath(),
+                        Objects.requireNonNull(CsvFileTest.class.getClassLoader().getResource(inputPath)).getPath(),
                         tempFile.getAbsolutePath());
         long parsedLineCount = CsvFile.jsonize(tempFile.getAbsolutePath(), map, ",", outFile.getAbsolutePath());
         Assert.assertEquals(normalizedLineCount, parsedLineCount);
