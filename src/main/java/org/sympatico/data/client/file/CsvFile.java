@@ -1,39 +1,30 @@
 package org.sympatico.data.client.file;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 
 public class CsvFile {
 
     private static final Logger LOG  = LoggerFactory.getLogger(CsvFile.class);
 
-    public static void jsonize(String filename,
+    public static long jsonize(String inputPath,
                                Map<String, Integer> fields,
-                               Boolean hasHeader,
-                               String key,
                                String regex,
-                               ConcurrentLinkedQueue<Pair<String, byte[]>> queue) throws IOException {
-        LOG.info("Reading file: " + filename);
-        File inputFile = new File(filename);
-        File tempFile = File.createTempFile("csvfile", ".tmp");
-        //tempFile.deleteOnExit();
-        normalize(inputFile, tempFile);
+                               String outputPath) throws IOException {
+        LOG.info("Jsonizing file: " + inputPath);
+        long lineCount = 0L;
         Pattern splitter = Pattern.compile(regex);
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(tempFile)))) {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputPath)));
+            BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath)))) {
             String line;
-            if (hasHeader)
-                br.readLine(); // remove header
-            while ((line = br.readLine()) != null) {
+            while ((line = bufferedReader.readLine()) != null) {
+                lineCount++;
                 String[] split = splitter.split(line);
                 JSONObject json = new JSONObject();
                 for (Map.Entry<String, Integer> entry : fields.entrySet()) {
@@ -44,25 +35,30 @@ public class CsvFile {
                         LOG.error("Failed to parse line: " + entry.getValue());
                     }
                 }
-                queue.add(new ImmutablePair<>(key, json.toString().getBytes(StandardCharsets.UTF_8)));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        LOG.info("File loading completed for " + key );
-    }
-
-    private static void normalize(File inputFile, File tempFile) throws IOException {
-        BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tempFile)));
-        int count = 0;
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile)))) {
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                bufferedWriter.write(
-                        line.replace("\"", "").replace("\r\n", "\n").replace("\r", "\n") + "\n");
+                bufferedWriter.write(json.toString() + "\n");
             }
             bufferedWriter.flush();
         }
+        return lineCount;
+    }
+
+    public static long writeNormalizedFile(String inputPath, String outputPath)
+            throws IOException {
+        LOG.info("Normalizing file: " + inputPath);
+        long lineCount = 0L;
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(inputPath)));
+             BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath)))) {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                lineCount++;
+                bufferedWriter.write(
+                        line.replace("\"", "")
+                                .replace("\r\n", "\n")
+                                .replace("\r", "\n") + "\n");
+            }
+            bufferedWriter.flush();
+        }
+        return lineCount;
     }
 
 }

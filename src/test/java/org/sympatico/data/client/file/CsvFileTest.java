@@ -1,32 +1,28 @@
 package org.sympatico.data.client.file;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.sympatico.data.client.db.FilmDataProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 
 public class CsvFileTest {
 
-    private static final ConcurrentLinkedQueue<Pair<String, byte[]>> queue = new ConcurrentLinkedQueue<>();
-
     private final Properties config = new Properties();
-    private FilmDataProcessor filmProcessor;
+    private static final Logger LOG  = LoggerFactory.getLogger(CsvFileTest.class);
 
     @Before
     public void setup() throws Exception {
-        config.load(new FileInputStream(new java.io.File("conf/client.test.properties")));
+        config.load(Objects.requireNonNull(CsvFileTest.class.getClassLoader().getResourceAsStream("client.test.properties")));
     }
 
     @Test
@@ -41,21 +37,46 @@ public class CsvFileTest {
         map.put("date", 14);
         map.put("revenue", 15);
         String regex = config.getProperty("csv.regex");
-        Boolean hasHeader = Boolean.parseBoolean(config.getProperty("csv.has.header"));
-        CsvFile.jsonize(config.getProperty("csv.file"),
-                map, hasHeader, "metadata-test", regex, queue);
-        while (!queue.isEmpty()) {
-            System.out.println(new String(queue.poll().getValue()));
+        String inputPath = config.getProperty("csv.file");
+        File tempFile = File.createTempFile("test-csv-file", ",tmp");
+        File outFile = File.createTempFile("test-csv-file", ",tmp");
+        tempFile.deleteOnExit();
+        outFile.deleteOnExit();
+        long normalizedLineCount = CsvFile.writeNormalizedFile(inputPath, tempFile.getAbsolutePath());
+        long parsedLineCount = CsvFile.jsonize(tempFile.getAbsolutePath(), map, regex, outFile.getAbsolutePath());
+        Assert.assertEquals(normalizedLineCount, parsedLineCount);
+        long actualCount = 0L;
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader((new FileInputStream(outFile))))) {
+            while (bufferedReader.readLine() != null) {
+                actualCount++;
+            }
         }
+        Assert.assertEquals(parsedLineCount, actualCount);
     }
 
     @Test
-    public void jsonStandardCsv() throws IOException {
+    public void jsonStandardizeCsv() throws IOException {
         Map<String, Integer> map = new HashMap<>();
         map.put("id", 1);
         map.put("rating", 2);
-        CsvFile.jsonize("ratings_small.csv",
-                map, true, "ratings-test", ",", queue);
+        String inputPath = "ratings_small.csv";
+        File tempFile = File.createTempFile("test-csv-file", ",tmp");
+        File outFile = File.createTempFile("test-csv-file", ",tmp");
+        tempFile.deleteOnExit();
+        outFile.deleteOnExit();
+        long normalizedLineCount =
+                CsvFile.writeNormalizedFile(
+                        Objects.requireNonNull(CsvFileTest.class.getClassLoader().getResource(inputPath)).getPath(),
+                        tempFile.getAbsolutePath());
+        long parsedLineCount = CsvFile.jsonize(tempFile.getAbsolutePath(), map, ",", outFile.getAbsolutePath());
+        Assert.assertEquals(normalizedLineCount, parsedLineCount);
+        long actualCount = 0L;
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader((new FileInputStream(outFile))))) {
+            while (bufferedReader.readLine() != null) {
+                actualCount++;
+            }
+        }
+        Assert.assertEquals(parsedLineCount, actualCount);
     }
 
     @Test
@@ -69,7 +90,7 @@ public class CsvFileTest {
         String[] split = splitter2.split(str);
         //System.out.println("Split str [" + split.length + "]: " + Arrays.toString(split));
         for (String p : split) {
-            System.out.println(p);
+            LOG.info(p);
         }
     }
 
