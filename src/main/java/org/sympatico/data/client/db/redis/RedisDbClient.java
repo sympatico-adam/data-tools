@@ -31,7 +31,7 @@ public class RedisDbClient extends DbClient {
         commands.hset(id, id, value);
     }
 
-    public Long hlen(String key) {
+    public long hlen(String key) {
         return commands.hlen(key.getBytes());
     }
 
