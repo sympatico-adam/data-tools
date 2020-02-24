@@ -15,39 +15,40 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
-public class CsvFileTest {
+public class CsvFileClientTest {
 
     private final Properties config = new Properties();
-    private static final Logger LOG  = LoggerFactory.getLogger(CsvFileTest.class);
+    private static final Logger LOG  = LoggerFactory.getLogger(CsvFileClientTest.class);
 
     @Before
     public void setup() throws Exception {
-        config.load(Objects.requireNonNull(CsvFileTest.class.getClassLoader().getResourceAsStream("client.test.properties")));
+        config.load(Objects.requireNonNull(CsvFileClientTest.class.getClassLoader().getResourceAsStream("client.test.properties")));
     }
 
     @Test
     public void jsonizeBrokenCsv() throws IOException {
-        Map<String, Integer> map = new HashMap<>();
-        map.put("id", 5);
-        map.put("title", 20);
-        map.put("budget", 2);
-        map.put("genres", 3);
-        map.put("popularity", 10);
-        map.put("companies", 12);
-        map.put("date", 14);
-        map.put("revenue", 15);
+        Map<Integer, String> map = new HashMap<>();
+        map.put(5, "id");
+        map.put(20, "title");
+        map.put(2, "budget");
+        map.put(3, "genres");
+        map.put(10, "popularity");
+        map.put(12, "companies");
+        map.put(14, "date");
+        map.put(15, "revenue");
         String regex = config.getProperty("csv.regex");
-        String inputPath = config.getProperty("csv.file");
-        File tempFile = File.createTempFile("test-csv-file", ",tmp");
-        File outFile = File.createTempFile("test-csv-file", ",tmp");
+        InputStream inputStream = CsvFileClientTest.class.getClassLoader().getResourceAsStream(config.getProperty("csv.file"));
+        File tempFile = File.createTempFile("test-csv-file", ".tmp");
+        File outFile = File.createTempFile("test-csv-file", ".tmp");
         tempFile.deleteOnExit();
         outFile.deleteOnExit();
-        long normalizedLineCount = CsvFile.writeNormalizedFile(inputPath, tempFile.getAbsolutePath());
-        long parsedLineCount = CsvFile.jsonize(tempFile.getAbsolutePath(), map, regex, outFile.getAbsolutePath());
-        Assert.assertEquals(normalizedLineCount, parsedLineCount);
+
         long actualCount = 0L;
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader((new FileInputStream(outFile))))) {
-            while (bufferedReader.readLine() != null) {
+        long parsedLineCount;
+        try (PipedOutputStream outputStream = new PipedOutputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(new PipedInputStream(outputStream)))) {
+            parsedLineCount = new CsvFileClient(map, regex).jsonizeFileStream(inputStream, outputStream);
+            while ((reader.read(new char[0])) > 0) {
                 actualCount++;
             }
         }
@@ -56,23 +57,19 @@ public class CsvFileTest {
 
     @Test
     public void jsonStandardizeCsv() throws IOException {
-        Map<String, Integer> map = new HashMap<>();
-        map.put("id", 1);
-        map.put("rating", 2);
+        Map<Integer, String> map = new HashMap<>();
+        map.put(1, "id");
+        map.put(2, "rating");
         String inputPath = "ratings_small.csv";
-        File tempFile = File.createTempFile("test-csv-file", ",tmp");
-        File outFile = File.createTempFile("test-csv-file", ",tmp");
-        tempFile.deleteOnExit();
+        InputStream inputStream = CsvFileClientTest.class.getClassLoader().getResourceAsStream(config.getProperty("csv.file"));
+        File outFile = File.createTempFile("test-csv-file", ".tmp");
         outFile.deleteOnExit();
-        long normalizedLineCount =
-                CsvFile.writeNormalizedFile(
-                        Objects.requireNonNull(CsvFileTest.class.getClassLoader().getResource(inputPath)).getPath(),
-                        tempFile.getAbsolutePath());
-        long parsedLineCount = CsvFile.jsonize(tempFile.getAbsolutePath(), map, ",", outFile.getAbsolutePath());
-        Assert.assertEquals(normalizedLineCount, parsedLineCount);
         long actualCount = 0L;
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader((new FileInputStream(outFile))))) {
-            while (bufferedReader.readLine() != null) {
+        long parsedLineCount;
+        try (PipedOutputStream outputStream = new PipedOutputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(new PipedInputStream(outputStream)))) {
+            parsedLineCount = new CsvFileClient(map, ",").jsonizeFileStream(inputStream, outputStream);
+            while ((reader.read(new char[0])) > 0) {
                 actualCount++;
             }
         }
