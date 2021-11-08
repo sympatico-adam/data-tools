@@ -1,19 +1,14 @@
 package org.sympatico.data.client.db.mongo
 
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.mongodb.client.MongoDatabase
-import org.bson.Document
-import org.codehaus.jettison.json.JSONObject
+import org.bson.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.lang.Runnable
 import org.slf4j.LoggerFactory
+import org.sympatico.data.client.json.JsonParser
 import java.lang.InterruptedException
-import java.nio.charset.StandardCharsets
-import java.time.Instant
-import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.concurrent.timer
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
@@ -43,22 +38,44 @@ class MongoRunnable(
 
     private fun parseQueueMessage() {
         while (queue.isNotEmpty()) {
+            val jsonParser = JsonParser()
             val messagePair = queue.poll()
-            if (messagePair == null) {
+            val collection = messagePair.first
+            val byteArray = messagePair.second
+            if (byteArray.isEmpty()) {
                 Thread.sleep(1000)
             } else {
-                val objectMapper = ObjectMapper()
-                val json = objectMapper.readTree(String(messagePair.second, StandardCharsets.UTF_8))
-                if (json != null && !json.isEmpty(objectMapper.serializerProviderInstance)) {
-                    mongoDatabase.getCollection(messagePair.first).insertOne(Document.parse(json.toString()))
-                } else
-                    LOG.info("dropping empty json object for key: ${messagePair.first}")
+                try {
+                    val json = jsonParser.deserializeJsonByteArray(byteArray)
+                    if (json.isJsonObject && !json.isJsonNull) {
+                        val jsonObject = jsonParser.deserializeJsonObject(json)
+                        LOG.info("json loaded:\n${jsonObject}\n")
+                        mongoDatabase.getCollection(collection)
+                            .insertOne(Document(jsonParser.jsonToMap(jsonObject)))
+                    } else if (json.isJsonArray && !json.isJsonNull && !json.asJsonArray.isEmpty) {
+                        val documents = mutableListOf<Document>()
+                        jsonParser.deserializeJsonArray(json)
+                            .fold(documents) { acc, element ->
+                                if (element.isJsonObject)
+                                    acc.add(Document(jsonParser.jsonToMap(element)))
+                                acc
+                            }
+                        if (documents.isNotEmpty())
+                            mongoDatabase.getCollection(collection).insertMany(documents)
 
+                    } else
+                        LOG.debug("dropping empty json object for collection [ $collection ]\n")
+                } catch (e: Exception) {
+                    LOG.error("bad json for collection [ $collection ]: \n${String(byteArray)}\n")
+                    e.printStackTrace()
+                }
             }
         }
     }
 
-    @OptIn(ExperimentalTime::class) fun shutdown() {
+
+    @ExperimentalTime
+    fun shutdown() {
         LOG.info("shutting down mongo runnable...")
         isShuttingDown.set(true)
         val timeMark = TimeSource.Monotonic.markNow()

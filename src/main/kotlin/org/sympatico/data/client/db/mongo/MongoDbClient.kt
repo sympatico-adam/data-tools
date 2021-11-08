@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class MongoDbClient (val host: String, val port: Int) {
 
-    private var mongoClient: MongoClient
+    var mongoClient: MongoClient
 
     init {
         val codecRegistry = CodecRegistries.fromCodecs(

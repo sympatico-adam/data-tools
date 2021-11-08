@@ -4,10 +4,11 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.time.ExperimentalTime
 
 class MongoDocumentLoader (host: String, port: Int) {
 
-    val queue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
+    private val queue: ConcurrentLinkedQueue<Pair<String, ByteArray>> = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
     private var executorService: ExecutorService = Executors.newCachedThreadPool()
     private var runnables: MutableList<MongoRunnable> = mutableListOf()
     private val mongoDbClient = MongoDbClient(host, port)
@@ -19,6 +20,11 @@ class MongoDocumentLoader (host: String, port: Int) {
         }
     }
 
+    fun getRunnableQueue(): ConcurrentLinkedQueue <Pair<String, ByteArray>> {
+        return queue
+    }
+
+    @ExperimentalTime
     @Synchronized
     fun shutdown() {
         LOG.info("shutting down mongo loader...")

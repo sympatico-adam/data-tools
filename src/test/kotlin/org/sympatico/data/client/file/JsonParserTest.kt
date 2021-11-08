@@ -7,6 +7,7 @@ import org.sympatico.data.client.FileLoader
 import org.sympatico.data.client.db.mongo.MongoDocumentLoader
 import org.sympatico.data.client.json.JsonParser
 import java.util.*
+import kotlin.time.ExperimentalTime
 
 class JsonParserTest {
     private val config = Properties()
@@ -25,16 +26,16 @@ class JsonParserTest {
         loader.startMongoDocumentLoader(4, "testdb")
     }
 
+  @ExperimentalTime
   @Test
   fun loadJsonFiles() {
-      val files = FileLoader.loadFilesFromPath("src/test/resources/zillow", "json")
+      val files = FileLoader.loadFilesFromPath("src/test/resources/", "json")
       val parser = JsonParser()
-      val queue = loader.queue
+      val queue = loader.getRunnableQueue()
       //      val testdb = mongo.getDatabase("testdb")
       files.forEach { file ->
           val jsonPair =  parser.parseJsonFile(file)
-          queue.add(jsonPair.first to
-             jsonPair.second.toByteArray())
+          queue.add(jsonPair.first to jsonPair.second)
     //          LOG.info("Document count: ${mongo.getDatabase("DocumentLoaderDB").getCollection("jsonCollection").countDocuments()}")
       }
       loader.shutdown()

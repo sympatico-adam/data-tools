@@ -8,16 +8,8 @@ import com.mongodb.client.model.Filters
 import org.bson.BsonDocument
 import org.sympatico.data.client.db.mongo.MongoDocumentLoader
 import org.sympatico.data.client.file.CsvFileClient
-import de.bwaldvogel.mongo.MongoServer
-import com.mongodb.MongoClientSettings
-import org.bson.codecs.configuration.CodecRegistry
-import org.junit.BeforeClass
-import de.bwaldvogel.mongo.backend.memory.MemoryBackend
-import org.bson.codecs.configuration.CodecRegistries
-import com.mongodb.ConnectionString
 import com.mongodb.client.MongoDatabase
 import org.bson.Document
-import org.bson.codecs.*
 import org.sympatico.data.client.db.mongo.MongoDbClient
 import org.junit.AfterClass
 import org.junit.Assert
@@ -34,19 +26,17 @@ class MongoDbClientTest {
     @Throws(JSONException::class)
     fun setTest() {
         val document1 = Document.parse("{test: '1', arrayObj: {keyObj: 'value1'}}")
-        database!!.getCollection("TestCollection").insertOne(document1)
+        database.getCollection("TestCollection").insertOne(document1)
         val result = JSONArray()
-        for (document in database!!.getCollection("TestCollection").find(Document())) {
+        for (document in database.getCollection("TestCollection").find(Document())) {
             result.put(document.toJson())
         }
         println(result.toString())
         Assert.assertEquals("Incorrect return result", "1", JSONObject(result[0].toString())["test"])
     }
 
-    @get:Throws(JSONException::class, IOException::class)
-    @get:Test
-    val filterTest: Unit
-        get() {
+    @Test
+    fun filterTest() {
             val document1 = Document.parse("{arrayObj: {keyObj: 'value1'}}}")
             val document2 = Document.parse("{arrayObj: {keyObj: 'value3'}}}")
             val document3 = Document.parse("{arrayObj: {keyObj: 'value5'}}}")
@@ -54,9 +44,9 @@ class MongoDbClientTest {
             collection.add(document1)
             collection.add(document2)
             collection.add(document3)
-            database!!.getCollection("TestCollection2").insertMany(collection)
+            database.getCollection("TestCollection2").insertMany(collection)
             val result = JSONArray()
-            val mongoCollection = database!!.getCollection("TestCollection2")
+            val mongoCollection = database.getCollection("TestCollection2")
             println(mongoCollection.estimatedDocumentCount())
             for (document in mongoCollection.find().filter(
                 Filters.eq(
@@ -80,7 +70,8 @@ class MongoDbClientTest {
     @Throws(Exception::class)
     fun runnableTest() {
         val runner = MongoDocumentLoader(hostname, port)
-        val queue = runner.queue
+        config.load(FileInputStream(File("src/test/resources/client.test.properties")))
+        val queue = runner.getRunnableQueue()
         runner.startMongoDocumentLoader(4, "DocumentLoaderDB")
         val map: MutableMap<Int, String> = HashMap()
         map[5] = "id"
@@ -106,13 +97,13 @@ class MongoDbClientTest {
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 val jsonObject = JSONObject(line)
-                queue.add(Pair("TestCollection3", jsonObject.toString().toByteArray(StandardCharsets.UTF_8)))
+                queue.add("TestCollection3" to jsonObject.toString().toByteArray(StandardCharsets.UTF_8))
             }
         }
         while (!queue.isEmpty()) {
             Thread.sleep(1000L)
         }
-        val actual = mongoDbClient!!.getDatabase("DocumentLoaderDB").getCollection("TestCollection3").countDocuments()
+        val actual = mongoDbClient.getDatabase("DocumentLoaderDB").getCollection("TestCollection3").countDocuments()
         println(
             """
     Test Collection: ${jsonArray.length()}
