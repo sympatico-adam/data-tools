@@ -2,12 +2,10 @@ package org.sympatico.data.client.db.mongo
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.mongodb.client.MongoDatabase
-import org.bson.*
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.lang.Runnable
+import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.sympatico.data.client.json.JsonParser
-import java.lang.InterruptedException
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime

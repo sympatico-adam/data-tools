@@ -1,22 +1,20 @@
 package org.sympatico.data.client.db
 
-import kotlin.Throws
-import org.codehaus.jettison.json.JSONException
-import org.codehaus.jettison.json.JSONArray
-import org.codehaus.jettison.json.JSONObject
+import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model.Filters
 import org.bson.BsonDocument
-import org.sympatico.data.client.db.mongo.MongoDocumentLoader
-import org.sympatico.data.client.file.CsvFileClient
-import com.mongodb.client.MongoDatabase
 import org.bson.Document
-import org.sympatico.data.client.db.mongo.MongoDbClient
+import org.codehaus.jettison.json.JSONArray
+import org.codehaus.jettison.json.JSONException
+import org.codehaus.jettison.json.JSONObject
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Test
 import org.slf4j.LoggerFactory
+import org.sympatico.data.client.db.mongo.MongoDbClient
+import org.sympatico.data.client.db.mongo.MongoDocumentLoader
+import org.sympatico.data.client.file.CsvFileClient
 import java.io.*
-import java.lang.Exception
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -37,34 +35,34 @@ class MongoDbClientTest {
 
     @Test
     fun filterTest() {
-            val document1 = Document.parse("{arrayObj: {keyObj: 'value1'}}}")
-            val document2 = Document.parse("{arrayObj: {keyObj: 'value3'}}}")
-            val document3 = Document.parse("{arrayObj: {keyObj: 'value5'}}}")
-            val collection: MutableList<Document> = ArrayList()
-            collection.add(document1)
-            collection.add(document2)
-            collection.add(document3)
-            database.getCollection("TestCollection2").insertMany(collection)
-            val result = JSONArray()
-            val mongoCollection = database.getCollection("TestCollection2")
-            println(mongoCollection.estimatedDocumentCount())
-            for (document in mongoCollection.find().filter(
-                Filters.eq(
-                    "arrayObj",
-                    BsonDocument.parse("{'keyObj': 'value1'}")
-                )
-            )) {
-                result.put(JSONObject(document.toJson()))
-                println(document.toJson())
-            }
-            println(result.toString())
-            val jsonObject = result.getJSONObject(0)
-            Assert.assertEquals(
-                "Incorrect return result",
-                JSONObject("{\"keyObj\":\"value1\"}"),
-                jsonObject["arrayObj"]
+        val document1 = Document.parse("{arrayObj: {keyObj: 'value1'}}}")
+        val document2 = Document.parse("{arrayObj: {keyObj: 'value3'}}}")
+        val document3 = Document.parse("{arrayObj: {keyObj: 'value5'}}}")
+        val collection: MutableList<Document> = ArrayList()
+        collection.add(document1)
+        collection.add(document2)
+        collection.add(document3)
+        database.getCollection("TestCollection2").insertMany(collection)
+        val result = JSONArray()
+        val mongoCollection = database.getCollection("TestCollection2")
+        println(mongoCollection.estimatedDocumentCount())
+        for (document in mongoCollection.find().filter(
+            Filters.eq(
+                "arrayObj",
+                BsonDocument.parse("{'keyObj': 'value1'}")
             )
+        )) {
+            result.put(JSONObject(document.toJson()))
+            println(document.toJson())
         }
+        println(result.toString())
+        val jsonObject = result.getJSONObject(0)
+        Assert.assertEquals(
+            "Incorrect return result",
+            JSONObject("{\"keyObj\":\"value1\"}"),
+            jsonObject["arrayObj"]
+        )
+    }
 
     @Test
     @Throws(Exception::class)

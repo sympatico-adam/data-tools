@@ -2,15 +2,13 @@ package org.sympatico.data.client.db.redis
 
 import io.lettuce.core.api.sync.RedisCommands
 import org.apache.commons.lang3.tuple.Pair
-import java.lang.Runnable
-import org.sympatico.data.client.db.redis.RedisRunnable
-import org.codehaus.jettison.json.JSONObject
 import org.codehaus.jettison.json.JSONException
+import org.codehaus.jettison.json.JSONObject
 import org.slf4j.LoggerFactory
-import java.lang.InterruptedException
+import org.sympatico.data.client.db.redis.RedisRunnable
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 
 class RedisRunnable(private val redisCommands: RedisCommands<String, ByteArray>) : Runnable {
     override fun run() {

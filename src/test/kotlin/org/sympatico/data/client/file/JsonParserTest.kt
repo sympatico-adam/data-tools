@@ -26,20 +26,20 @@ class JsonParserTest {
         loader.startMongoDocumentLoader(4, "testdb")
     }
 
-  @ExperimentalTime
-  @Test
-  fun loadJsonFiles() {
-      val files = FileLoader.loadFilesFromPath("src/test/resources/", "json")
-      val parser = JsonParser()
-      val queue = loader.getRunnableQueue()
-      //      val testdb = mongo.getDatabase("testdb")
-      files.forEach { file ->
-          val jsonPair =  parser.parseJsonFile(file)
-          queue.add(jsonPair.first to jsonPair.second)
-    //          LOG.info("Document count: ${mongo.getDatabase("DocumentLoaderDB").getCollection("jsonCollection").countDocuments()}")
-      }
-      loader.shutdown()
-  }
+    @ExperimentalTime
+    @Test
+    fun loadJsonFiles() {
+        val files = FileLoader.loadFilesFromPath("src/test/resources/", "json")
+        val parser = JsonParser()
+        val queue = loader.getRunnableQueue()
+        //      val testdb = mongo.getDatabase("testdb")
+        files.forEach { file ->
+            val jsonPair = parser.parseJsonFile(file)
+            queue.add(jsonPair.first to jsonPair.second)
+            //          LOG.info("Document count: ${mongo.getDatabase("DocumentLoaderDB").getCollection("jsonCollection").countDocuments()}")
+        }
+        loader.shutdown()
+    }
 
     companion object {
         private val LOG = LoggerFactory.getLogger(JsonParserTest::class.java)

@@ -1,16 +1,14 @@
 package org.sympatico.data.client.file
 
-import java.lang.ArrayIndexOutOfBoundsException
-import org.sympatico.data.client.file.CsvFileClient
-import org.codehaus.jettison.json.JSONObject
 import org.codehaus.jettison.json.JSONException
+import org.codehaus.jettison.json.JSONObject
 import org.slf4j.LoggerFactory
+import org.sympatico.data.client.file.CsvFileClient
 import java.io.*
-import java.lang.StringBuilder
-import java.util.regex.Pattern
 
 class CsvFileClient(private val fields: Map<Int, String>, regex: String) {
     private val splitter: Regex = Regex(regex)
+
     @Throws(IOException::class)
     fun jsonizeFileStream(inputStream: InputStream, outputStream: OutputStream): Long {
         var lineCount = 0L

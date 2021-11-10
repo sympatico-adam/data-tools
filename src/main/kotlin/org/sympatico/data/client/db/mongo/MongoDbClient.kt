@@ -10,7 +10,7 @@ import org.bson.codecs.configuration.CodecRegistries
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 
-class MongoDbClient (val host: String, val port: Int) {
+class MongoDbClient(val host: String, val port: Int) {
 
     var mongoClient: MongoClient
 
