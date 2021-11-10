@@ -1,9 +1,8 @@
 package org.sympatico.data.client.db.redis
 
 import io.lettuce.core.RedisClient
-import io.lettuce.core.resource.ClientResources
 import io.lettuce.core.RedisURI
-import org.sympatico.data.client.db.redis.RedisDbClient
+import io.lettuce.core.resource.ClientResources
 
 class RedisDbClient {
     @Synchronized

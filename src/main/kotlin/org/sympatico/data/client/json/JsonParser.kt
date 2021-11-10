@@ -5,9 +5,11 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.FileReader
+import java.io.InputStreamReader
 import java.text.SimpleDateFormat
-import kotlin.collections.HashMap
 
 class JsonParser {
 
@@ -27,35 +29,18 @@ class JsonParser {
         val json = deserializeJsonFile(file)
         LOG.info("normalizing json structure:\n$json\n")
         val result = parseJson(json)
-        LOG.info("*** finished parsing\n" +
-                 "*** ${file.name} " +
-                "***********************" +
-                "\n${result}\n")
+        LOG.info(
+            "*** finished parsing\n" +
+                    "*** ${file.name} " +
+                    "***********************" +
+                    "\n${result}\n"
+        )
         return file.nameWithoutExtension to result.toString().toByteArray()
     }
 
     fun parseJson(jsonElement: JsonElement): JsonElement {
         return parseNestedElements(jsonElement)
     }
-/*
-    fun parseJson(key: String, jsonElement: JsonElement): List<JsonElement> {
-        LOG.info("normalizing json structure for key [ $key ]:\n$jsonElement\n")
-        val jsonList = mutableListOf<JsonElement>()
-        if (jsonElement.isJsonArray) {
-            val jsonArray = JsonArray()
-            jsonElement.asJsonArray.forEach { element ->
-                if (element.isJsonObject)
-                    jsonArray.add(deserializeJsonObject(element))
-                else if (element.isJsonPrimitive)
-                    jsonArray.add(jsonElement)
-            }
-        } else if (jsonElement.isJsonObject)
-            jsonList.add(parseNestedObjects(jsonElement.asJsonObject))
-        else if (jsonElement.isJsonPrimitive)
-            jsonList.add(createJsonObject(UUID.randomUUID().toString(), jsonElement))
-        LOG.info("finished parsing json key [ $key ]:\n$jsonList\n")
-        return jsonList
-    }*/
 
     fun deserializeJsonObject(jsonElement: JsonElement): JsonObject {
         return parseNestedObjects(gsonBuilder.fromJson(jsonElement, JsonObject::class.java)).asJsonObject
@@ -70,11 +55,15 @@ class JsonParser {
             if (acc.has(element.key) && acc[element.key].isJsonArray)
                 acc[element.key].asJsonArray.forEachIndexed { idx, member ->
                     if (member.isJsonObject)
-                        acc.add(element.key,
-                            mergeJsonObjects(acc[element.key].asJsonArray[idx].asJsonObject,
-                            member.asJsonObject))
-            } else if (acc.has(element.key) && acc[element.key].isJsonObject) {
-                    mergeJsonObjects(acc.get(element.key).asJsonObject, element.value.asJsonObject)
+                        acc.add(
+                            element.key,
+                            mergeJsonObjects(
+                                acc[element.key].asJsonArray[idx].asJsonObject,
+                                member.asJsonObject
+                            )
+                        )
+                } else if (acc.has(element.key) && acc[element.key].isJsonObject) {
+                mergeJsonObjects(acc.get(element.key).asJsonObject, element.value.asJsonObject)
             } else {
                 val newKey = if (acc.has(element.key)) "${element.key}_NEW"
                 else element.key
@@ -161,8 +150,7 @@ class JsonParser {
                     nested
                 }
                 jsonResult
-            }
-            else {
+            } else {
                 jsonResult.add(element.key, element.value)
                 jsonResult
             }
@@ -178,7 +166,7 @@ class JsonParser {
                     hierarchy.addAll(getNestedHierarchy(element.value.asJsonObject, element.key))
                 }
                 hierarchy
-        } else emptyList()
+            } else emptyList()
     }
 
 }

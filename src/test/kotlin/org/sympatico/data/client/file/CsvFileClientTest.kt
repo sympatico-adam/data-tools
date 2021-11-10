@@ -58,7 +58,8 @@ class CsvFileClientTest {
         map[1] = "id"
         map[2] = "rating"
         val inputPath = "ratings_small.csv"
-        val inputStream = CsvFileClientTest::class.java.classLoader.getResourceAsStream(config.getProperty("csv.file"))!!
+        val inputStream =
+            CsvFileClientTest::class.java.classLoader.getResourceAsStream(config.getProperty("csv.file"))!!
         val outFile = File.createTempFile("test-csv-file", ".tmp")
         outFile.deleteOnExit()
         var actualCount = 0L

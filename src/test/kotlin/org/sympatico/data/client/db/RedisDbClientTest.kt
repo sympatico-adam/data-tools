@@ -46,8 +46,8 @@ class RedisDbClientTest {
             ClientResources.builder()
                 .build(),
             RedisURI.builder()
-                .withHost(server.getHost())
-                .withPort(server.getBindPort())
+                .withHost(server.host)
+                .withPort(server.bindPort)
                 .build()
         )!!.connect(ByteArrayCodec()).sync()
         private val client: RedisClient? = null

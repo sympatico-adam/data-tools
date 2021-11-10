@@ -1,12 +1,12 @@
 package org.sympatico.data.client.db.mongo
 
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.ExperimentalTime
 
-class MongoDocumentLoader (host: String, port: Int) {
+class MongoDocumentLoader(host: String, port: Int) {
 
     private val queue: ConcurrentLinkedQueue<Pair<String, ByteArray>> = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
     private var executorService: ExecutorService = Executors.newCachedThreadPool()
@@ -20,7 +20,7 @@ class MongoDocumentLoader (host: String, port: Int) {
         }
     }
 
-    fun getRunnableQueue(): ConcurrentLinkedQueue <Pair<String, ByteArray>> {
+    fun getRunnableQueue(): ConcurrentLinkedQueue<Pair<String, ByteArray>> {
         return queue
     }
 
