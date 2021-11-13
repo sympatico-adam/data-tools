@@ -18,16 +18,10 @@ class JsonParserTest {
     private val loader = MongoDocumentLoader(hostname, port)
     /*private val mongo = MongoDbClient(hostname, port).getClient()*/
 
-    @BeforeEach
-    @Throws(Exception::class)
-    fun setup() {
-        config.load(Objects.requireNonNull(JsonParserTest::class.java.classLoader.getResourceAsStream("client.test.properties")))
-        loader.startMongoDocumentLoader(4, "testdb")
-    }
-
     @ExperimentalTime
     @Test
     fun loadJsonFiles() {
+        loader.startMongoDocumentLoader(4, "testdb")
         val files = FileLoader.findFilesInPath("src/test/resources/", "json")
         val parser = JsonParser()
         val queue = loader.getRunnableQueue()

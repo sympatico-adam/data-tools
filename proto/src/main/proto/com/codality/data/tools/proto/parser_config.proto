@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option java_package = "com.codality.data.tools.proto";
+option java_outer_classname = "ParserConfigOuter";
+option java_multiple_files = true;
+
+message ParserConfig {
+  DbConf db = 1;
+  FormatConf format = 2;
+}
+
+message DbConf {
+  MongoConf mongo = 1;
+  RedisConf redis = 2;
+}
+
+message MongoConf {
+  string host = 1;
+  int32 port = 2;
+  string dbname = 3;
+  int32 workerCount = 4;
+}
+
+message RedisConf {
+  string host = 1;
+  int32 port = 2;
+  int32 workerCount = 3;
+}
+
+message FormatConf {
+  JsonConf json = 1;
+  CsvConf csv = 2;
+}
+
+message JsonConf {
+  bool parseNested = 1;
+}
+
+message CsvConf {
+  string regex = 1;
+  bool hasHeader = 2;
+  repeated CsvField fields = 3;
+}
+
+message CsvField {
+  int32 sourceColumn = 1;
+  int32 destinationColumn = 2;
+  int32 name = 3;
+}

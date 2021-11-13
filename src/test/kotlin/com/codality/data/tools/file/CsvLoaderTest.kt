@@ -16,10 +16,9 @@ class CsvLoaderTest {
     @BeforeEach
     @Throws(Exception::class)
     fun setup() {
-        config.load(Objects.requireNonNull(CsvLoaderTest::class.java.classLoader.getResourceAsStream("client.test.properties")))
+        config.load(FileReader(CsvLoaderTest::class.java.classLoader.getResource("client.test.properties")!!.file))
     }
 
-    @Test
     @Throws(IOException::class)
     fun jsonizeBrokenCsv() {
         val map: MutableMap<Int, String> = HashMap()
@@ -51,7 +50,6 @@ class CsvLoaderTest {
         assertEquals(parsedLineCount, actualCount)
     }
 
-    @Test
     @Throws(IOException::class)
     fun jsonStandardizeCsv() {
         val map: MutableMap<Int, String> = HashMap()
@@ -92,7 +90,6 @@ class CsvLoaderTest {
         }
     }
 
-    @Test
     @Throws(JSONException::class, IOException::class)
     fun testDelimiter() {
         val line =
