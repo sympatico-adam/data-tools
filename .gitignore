@@ -9,3 +9,8 @@ target/
 *.csv
 .classpath
 .settings/
+*.tar.gz
+*.json
+*.text
+build/
+.gradle/

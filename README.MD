@@ -6,7 +6,7 @@ There are some enforced opinions on the definition of a "generic" document when 
 data. Ideally data structures should be unaltered. Odd output formatting should be addressed or accounted
 for while parsing in order to make sure the data being parsed is as portable as possible. 
 
-####For example:
+#### For example:
 
 Given a json string such as the following -
 
