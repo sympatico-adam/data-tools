@@ -1,13 +1,15 @@
+plugins {
+    `java-library`
+    kotlin("jvm") version "1.5.31"
+}
+
 group = "com.codality.data.tools"
 version = "1.1-SNAPSHOT"
 description = "Tools for ETL"
-java.sourceCompatibility = JavaVersion.VERSION_1_8
 
-plugins {
-    `java-library`
-    id("java")
-    kotlin("jvm") version "1.5.31"
-    idea
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 apply {
@@ -56,12 +58,7 @@ sourceSets {
     }
 }
 
-tasks.processTestResources {
-    exclude { details: FileTreeElement ->
 
-        details.file.name.contains(Regex(".*(pii||.mp3|.zip|.wav|.plist|.jpg)"))
-    }
-}
 
 tasks.test {
     useJUnitPlatform()

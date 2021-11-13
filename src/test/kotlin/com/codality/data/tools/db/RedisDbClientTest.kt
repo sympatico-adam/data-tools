@@ -24,6 +24,18 @@ class RedisDbClientTest {
     @Test
     @Throws(JSONException::class)
     fun setTest() {
+        var server: RedisServer = RedisServer.newRedisServer(6688)
+        server.start()
+        val redisDbClient = RedisDbClient()
+        var connection: RedisCommands<ByteArray, ByteArray> = redisDbClient.connect(
+            ClientResources.builder()
+                .build(),
+            RedisURI.builder()
+                .withHost(server.host)
+                .withPort(server.bindPort)
+                .build()
+        )!!.connect(ByteArrayCodec()).sync()
+        val client: RedisClient? = null
         val json1 = JSONObject("{id: '1', arrayObj: {keyObj: 'value1'}}")
         val json2 = JSONObject("{id: '2', arrayObj: {keyObj: 'value3'}}")
         val json3 = JSONObject("{id: '3', arrayObj: {keyObj: 'value5'}}")
@@ -36,32 +48,6 @@ class RedisDbClientTest {
         connection["3".toByteArray(StandardCharsets.UTF_8)] =
             json1["arrayObj"].toString().toByteArray(StandardCharsets.UTF_8)
         assertEquals(String(connection["2".toByteArray(StandardCharsets.UTF_8)]), "{\"keyObj\":\"value1\"}")
-    }
-
-    companion object {
-        private val config = Properties()
-        private var server: RedisServer = RedisServer.newRedisServer(6688)
-        val redisDbClient = RedisDbClient()
-        private var connection: RedisCommands<ByteArray, ByteArray> = redisDbClient.connect(
-            ClientResources.builder()
-                .build(),
-            RedisURI.builder()
-                .withHost(server.host)
-                .withPort(server.bindPort)
-                .build()
-        )!!.connect(ByteArrayCodec()).sync()
-        private val client: RedisClient? = null
-
-        @BeforeAll
-        @Throws(Exception::class)
-        fun setUp() {
-            server.start()
-        }
-
-        @AfterAll
-        @Throws(Exception::class)
-        fun teardown() {
-            server.stop()
-        }
+        server.stop()
     }
 }

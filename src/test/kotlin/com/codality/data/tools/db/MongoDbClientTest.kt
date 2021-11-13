@@ -65,7 +65,6 @@ class MongoDbClientTest {
         )
     }
 
-    @Test
     @Throws(Exception::class)
     fun runnableTest() {
         val runner = MongoDocumentLoader(hostname, port)
