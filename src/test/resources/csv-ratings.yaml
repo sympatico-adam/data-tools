@@ -1,0 +1,23 @@
+format:
+  csv:
+    regex: "(?=[^\\s]),(?=[^\\s])"
+    fields:
+      - sourceColumn: 1
+        destinationColumn: 0
+        name: "id"
+      - sourceColumn: 2
+        destinationColumn: 1
+        name: "rating"
+    hasHeader: true
+  json:
+    parseNested: true
+db:
+  mongo:
+    host: "localhost"
+    port: 27017
+    dbName: "default"
+    workerCount: 1
+  redis:
+    host: "localhost"
+    port: 6379
+    workerCount: 1

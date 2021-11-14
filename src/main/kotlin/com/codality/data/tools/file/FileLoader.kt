@@ -13,15 +13,11 @@ interface FileLoader {
 
         private val LOG: Logger = LoggerFactory.getLogger(FileLoader::class.java)
 
-        enum class Type {
-            CSV,
-            JSON
-        }
+        enum class Type { CSV, JSON }
 
         val CSV_REGEX_PROPERTY = "csv.regex"
         val CSV_REGEX_DEFAULT = ","
         val CSV_FIELDS_PROPERTY = "csv.fields"
-
 
         fun findFilesInPath(path: String, extension: String): List<File> {
             val filePath = Paths.get(path).toFile()
