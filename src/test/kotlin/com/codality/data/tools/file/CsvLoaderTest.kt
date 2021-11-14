@@ -1,76 +1,44 @@
 package com.codality.data.tools.file
 
+import com.codality.data.tools.CsvParser
+import com.codality.data.tools.config.YamlProperties
 import org.codehaus.jettison.json.JSONException
 import org.codehaus.jettison.json.JSONObject
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.*
-import java.util.*
 import java.util.regex.Pattern
 
 class CsvLoaderTest {
-    private val config = Properties()
-
-    @BeforeEach
-    @Throws(Exception::class)
-    fun setup() {
-        config.load(FileReader(CsvLoaderTest::class.java.classLoader.getResource("client.test.properties")!!.file))
-    }
 
     @Throws(IOException::class)
+    @Test
     fun jsonizeBrokenCsv() {
-        val map: MutableMap<Int, String> = HashMap()
-        map[5] = "id"
-        map[20] = "title"
-        map[2] = "budget"
-        map[3] = "genres"
-        map[10] = "popularity"
-        map[12] = "companies"
-        map[14] = "date"
-        map[15] = "revenue"
-        val regex = config.getProperty("csv.regex")
-        val inputStream =
-            CsvLoaderTest::class.java.classLoader.getResourceAsStream(config.getProperty("csv.file"))!!
-        val tempFile = File.createTempFile("test-csv-file", ".tmp")
-        val outFile = File.createTempFile("test-csv-file", ".tmp")
-        tempFile.deleteOnExit()
-        outFile.deleteOnExit()
-        var actualCount = 0L
-        var parsedLineCount: Long
-        PipedOutputStream().use { outputStream ->
-            BufferedReader(InputStreamReader(PipedInputStream(outputStream))).use { reader ->
-                parsedLineCount = CsvLoader(config).jsonizeFileStream(inputStream, outputStream)
-                while (reader.read(CharArray(0)) > 0) {
-                    actualCount++
-                }
-            }
-        }
-        assertEquals(parsedLineCount, actualCount)
+        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
+        val regex = config.format!!.csv!!.regex
+        val fields = config.format!!.csv!!.fieldsList
+        val result = CsvParser(regex, fields)
+                    .parse(
+                        File(
+                            CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file
+                        )
+                    )
+        LOG.info(String(result.second))
     }
 
     @Throws(IOException::class)
+    @Test
     fun jsonStandardizeCsv() {
-        val map: MutableMap<Int, String> = HashMap()
-        map[1] = "id"
-        map[2] = "rating"
-        val inputPath = "ratings_small.csv"
-        val inputStream =
-            CsvLoaderTest::class.java.classLoader.getResourceAsStream(config.getProperty("csv.file"))!!
-        val outFile = File.createTempFile("test-csv-file", ".tmp")
-        outFile.deleteOnExit()
-        var actualCount = 0L
-        var parsedLineCount: Long
-        PipedOutputStream().use { outputStream ->
-            BufferedReader(InputStreamReader(PipedInputStream(outputStream))).use { reader ->
-                parsedLineCount = CsvLoader(config).jsonizeFileStream(inputStream, outputStream)
-                while (reader.read(CharArray(0)) > 0) {
-                    actualCount++
-                }
-            }
-        }
-        assertEquals(parsedLineCount, actualCount)
+        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yaml")!!.file))
+        val regex = config.format!!.csv!!.regex
+        val fields = config.format!!.csv!!.fieldsList
+        val result = CsvParser(regex, fields)
+            .parse(
+                File(
+                    CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file
+                )
+            )
+        LOG.info(String(result.second))
     }
 
     @Test
@@ -92,20 +60,15 @@ class CsvLoaderTest {
 
     @Throws(JSONException::class, IOException::class)
     fun testDelimiter() {
+        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
+        val delimiter = config.format!!.csv!!.regex
         val line =
             "False,,0,\"[{'id': 80, 'name': 'Crime'}, {'id': 18, 'name': 'Drama'}]\",,74295,tt0086199,fi,Rikos ja rangaistus,\"An adaptation of Dostoyevsky's novel, updated to present-day Helsinki. Slaughterhouse worker Rahikainen murders a man, and is forced to live with the consequences of his actions...\",1.473622,/aqu3HrpHaY8MR2ZOIfuUTWC3r3N.jpg,\"[{'name': 'Villealfa Filmproduction Oy', 'id': 2303}]\",\"[{'iso_3166_1': 'FI', 'name': 'Finland'}]\",1983-12-02,0,93.0,\"[{'iso_639_1': 'fi', 'name': 'suomi'}]\",Released,Crime and Punishment,Crime and Punishment,False,5.9,19"
         BufferedReader(StringReader(line)).use { br ->
             var l: String
             while (br.readLine().also { l = it } != null) {
-                val delimiter = config.getProperty("csv.regex")
                 val splitLine = l.split(delimiter.toRegex()).toTypedArray()
-                println(
-                    """
-    ${splitLine.size}
-    
-    
-    """.trimIndent()
-                )
+                println("$splitLine\n")
                 val json = JSONObject()
                 json.put("id", splitLine[5])
                 json.put("budget", splitLine[2])

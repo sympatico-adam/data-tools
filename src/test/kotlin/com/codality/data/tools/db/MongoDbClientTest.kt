@@ -1,5 +1,7 @@
 package com.codality.data.tools.db
 
+import com.codality.data.tools.CsvParser
+import com.codality.data.tools.config.YamlProperties
 import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model.Filters
 import org.bson.BsonDocument
@@ -11,6 +13,7 @@ import org.slf4j.LoggerFactory
 import com.codality.data.tools.db.mongo.MongoDbClient
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
 import com.codality.data.tools.file.CsvLoader
+import com.codality.data.tools.file.CsvLoaderTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -66,59 +69,28 @@ class MongoDbClientTest {
     }
 
     @Throws(Exception::class)
+    @Test
     fun runnableTest() {
         val runner = MongoDocumentLoader(hostname, port)
-        config.load(FileInputStream(File("src/test/resources/client.test.properties")))
         val queue = runner.getRunnableQueue()
         runner.startMongoDocumentLoader(4, "DocumentLoaderDB")
-        val map: MutableMap<Int, String> = HashMap()
-        map[5] = "id"
-        map[20] = "title"
-        map[2] = "budget"
-        map[3] = "genres"
-        map[10] = "popularity"
-        map[12] = "companies"
-        map[14] = "date"
-        map[15] = "revenue"
-        map[9] = "description"
-        val tempFile = File.createTempFile("test-csv-file", ".tmp")
-        //tempFile.deleteOnExit();
-        val csvLoader = CsvLoader(config)
-        var parsedLineCount = 0L
-        val jsonArray = JSONArray()
-        FileOutputStream(tempFile).use { tempOutputStream ->
-            Objects.requireNonNull(
-                MongoDbClientTest::class.java.classLoader.getResourceAsStream("movies_metadata_small.csv")
-            ).use { inputStream -> parsedLineCount = csvLoader.jsonizeFileStream(inputStream, tempOutputStream) }
-        }
-        BufferedReader(InputStreamReader(FileInputStream(tempFile))).use { reader ->
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                val jsonObject = JSONObject(line)
-                queue.add("TestCollection3" to jsonObject.toString().toByteArray(StandardCharsets.UTF_8))
-            }
-        }
-        while (!queue.isEmpty()) {
-            Thread.sleep(1000L)
-        }
-        val actual = mongoDbClient.getDatabase("DocumentLoaderDB").getCollection("TestCollection3").countDocuments()
-        println(
-            """
-    Test Collection: ${jsonArray.length()}
-    
-    
-    $actual
-    """.trimIndent()
-        )
-        for (i in 0 until jsonArray.length()) {
-            println(jsonArray.getString(i))
-        }
-        assertTrue(parsedLineCount < actual + 5000)
+        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
+        val regex = config.format!!.csv!!.regex
+        val fields = config.format!!.csv!!.fieldsList
+        val result = CsvParser(regex, fields)
+            .parse(
+                File(
+                    CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file
+                )
+            )
+        queue.add(result)
+        val actual = mongoDbClient.getDatabase("movies_metadata_small")
+        LOG.info(actual.toString())
+        //assertTrue(parsedLineCount < actual + 5000)
     }
 
     companion object {
         private val LOG = LoggerFactory.getLogger(MongoDbClientTest::class.java)
-        private val config = Properties()
         private var hostname = "localhost"
         private var port = 27017
         private var mongoDbClient: MongoDbClient = MongoDbClient(hostname, port)

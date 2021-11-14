@@ -24,7 +24,7 @@ class JsonParser {
         }
         .create()
 
-    fun parseJsonFile(file: File): Pair<String, ByteArray> {
+    fun parse(file: File): Pair<String, ByteArray> {
         LOG.info("Streaming json file:\n${file.path}\n")
         val json = deserializeJsonFile(file)
         LOG.info("normalizing json structure:\n$json\n")

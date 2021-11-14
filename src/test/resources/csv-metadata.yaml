@@ -1,0 +1,44 @@
+format:
+  csv:
+    regex: "(?=[^\\s]),(?=[^\\s])"
+    fields:
+      - sourceColumn: 5
+        destinationColumn: 0
+        name: "id"
+      - sourceColumn: 20
+        destinationColumn: 1
+        name: "title"
+      - sourceColumn: 2
+        destinationColumn: 2
+        name: "budget"
+      - sourceColumn: 3
+        destinationColumn: 3
+        name: "genres"
+      - sourceColumn: 10
+        destinationColumn: 4
+        name: "popularity"
+      - sourceColumn: 12
+        destinationColumn: 5
+        name: "companies"
+      - sourceColumn: 14
+        destinationColumn: 6
+        name: "date"
+      - sourceColumn: 15
+        destinationColumn: 7
+        name: "revenue"
+      - sourceColumn: 9
+        destinationColumn: 8
+        name: "description"
+    hasHeader: true
+  json:
+    parseNested: true
+db:
+  mongo:
+    host: "localhost"
+    port: 27017
+    dbName: "default"
+    workerCount: 1
+  redis:
+    host: "localhost"
+    port: 6379
+    workerCount: 1
