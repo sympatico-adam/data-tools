@@ -1,4 +1,0 @@
-syntax = "proto3";
-
-// From the main sourceSet
-//import "com/codality/data/tools/proto/parser_config.proto";

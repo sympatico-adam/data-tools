@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option java_package = "com.codality.data.tools.proto";
-option java_outer_classname = "ParserConfigOuter";
-option java_multiple_files = true;
+package com.codality.data.tools.proto;
+
+option java_outer_classname = "ParserConfigMessage";
 
 message ParserConfig {
   DbConf db = 1;
@@ -17,7 +17,7 @@ message DbConf {
 message MongoConf {
   string host = 1;
   int32 port = 2;
-  string dbname = 3;
+  string dbName = 3;
   int32 workerCount = 4;
 }
 
@@ -43,7 +43,7 @@ message CsvConf {
 }
 
 message CsvField {
-  int32 sourceColumn = 1;
-  int32 destinationColumn = 2;
-  int32 name = 3;
+  string name = 1;
+  int32 sourceColumn = 2;
+  int32 destinationColumn = 3;
 }
