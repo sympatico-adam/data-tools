@@ -1,15 +1,24 @@
+import org.jetbrains.kotlin.konan.util.visibleName
+
 plugins {
     `java-library`
+    idea
     kotlin("jvm") version "1.5.31"
+    kotlin("plugin.serialization") version "1.5.31"
 }
 
 group = "com.codality.data.tools"
 version = "1.1-SNAPSHOT"
-description = "Tools for ETL"
+description = "Data tools for codality ETL"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_1_9
+    targetCompatibility = JavaVersion.VERSION_1_9
+}
+
+tasks.compileKotlin {
+    sourceCompatibility = "1.9"
+    targetCompatibility = "1.9"
 }
 
 apply {
@@ -22,7 +31,10 @@ repositories {
     mavenCentral()
 }
 
+val grpcVersion = "1.42.1"
+
 dependencies {
+    compileOnly("io.grpc:grpc-protobuf:$grpcVersion")
     implementation("io.ktor:ktor-client-logging-jvm:1.6.2")
     implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.14.1")
     implementation("org.slf4j:slf4j-api:1.7.30")
@@ -33,8 +45,13 @@ dependencies {
     implementation("io.lettuce:lettuce-core:5.2.1.RELEASE")
     implementation("org.mongodb:mongo-java-driver:3.12.0")
     implementation("org.codehaus.jettison:jettison:1.3.7")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.31")
     implementation("com.google.code.gson:gson:2.8.9")
+    implementation("com.codality.data.tools:proto:1.1-SNAPSHOT")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.31")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.3.1")
+    testImplementation("io.grpc:grpc-protobuf:$grpcVersion")
+    testImplementation("com.codality.data.tools:proto:1.1-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.2")
     testImplementation("de.bwaldvogel:mongo-java-server:1.24.0")
     testImplementation("ai.grakn:redis-mock:0.1.3")
