@@ -3,7 +3,7 @@ package com.codality.data.tools.file
 import org.slf4j.LoggerFactory
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
 import com.codality.data.tools.JsonParser
-import com.codality.data.tools.config.YamlProperties
+import com.codality.data.tools.config.ParserConf
 import de.bwaldvogel.mongo.MongoServer
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend
 import java.io.File
@@ -17,7 +17,7 @@ class JsonParserTest {
     @ExperimentalTime
     @Test
     fun loadJsonFiles() {
-        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yaml")!!.file))
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
         server.bind(config.db.mongo.host, config.db.mongo.port)
         val loader = MongoDocumentLoader(config)
         loader.startMongoDocumentLoader()

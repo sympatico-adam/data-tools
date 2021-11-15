@@ -46,9 +46,11 @@ sourceSets.test {
 
 
 val grpcVersion = "1.42.1"
+val protobufDepVersion = "3.19.1"
 
 dependencies {
     compileOnly("io.grpc:grpc-protobuf:$grpcVersion")
+    implementation("com.google.protobuf:protobuf-java-util:$protobufDepVersion")
     implementation("org.slf4j:slf4j-api:1.7.32")
     implementation("org.slf4j:slf4j-log4j12:1.7.32")
     implementation("log4j:log4j:1.2.17")

@@ -2,7 +2,7 @@ package com.codality.data.tools.db
 
 import com.codality.data.tools.CsvParser
 import com.codality.data.tools.Utils
-import com.codality.data.tools.config.YamlProperties
+import com.codality.data.tools.config.ParserConf
 import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model.Filters
 import org.bson.BsonDocument
@@ -69,7 +69,7 @@ class MongoDbClientTest {
     @Throws(Exception::class)
     @Test
     fun runnableTest() {
-        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
         val runner = MongoDocumentLoader(config)
         val queue = runner.getRunnableQueue()
         runner.startMongoDocumentLoader()

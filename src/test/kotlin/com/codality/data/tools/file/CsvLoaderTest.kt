@@ -1,7 +1,7 @@
 package com.codality.data.tools.file
 
 import com.codality.data.tools.CsvParser
-import com.codality.data.tools.config.YamlProperties
+import com.codality.data.tools.config.ParserConf
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import org.junit.jupiter.api.Test
@@ -14,7 +14,7 @@ class CsvLoaderTest {
     @Throws(IOException::class)
     @Test
     fun jsonizeBrokenCsv() {
-        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
         val result = CsvParser(config)
                     .parse(
                         File(
@@ -27,7 +27,7 @@ class CsvLoaderTest {
     @Throws(IOException::class)
     @Test
     fun jsonStandardizeCsv() {
-        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yaml")!!.file))
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yml")!!.file))
         val result = CsvParser(config)
             .parse(
                 File(
@@ -56,7 +56,7 @@ class CsvLoaderTest {
 
     @Throws(IOException::class)
     fun testDelimiter() {
-        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
         val delimiter = config.format!!.csv!!.regex
         val line =
             "False,,0,\"[{'id': 80, 'name': 'Crime'}, {'id': 18, 'name': 'Drama'}]\",,74295,tt0086199,fi,Rikos ja rangaistus,\"An adaptation of Dostoyevsky's novel, updated to present-day Helsinki. Slaughterhouse worker Rahikainen murders a man, and is forced to live with the consequences of his actions...\",1.473622,/aqu3HrpHaY8MR2ZOIfuUTWC3r3N.jpg,\"[{'name': 'Villealfa Filmproduction Oy', 'id': 2303}]\",\"[{'iso_3166_1': 'FI', 'name': 'Finland'}]\",1983-12-02,0,93.0,\"[{'iso_639_1': 'fi', 'name': 'suomi'}]\",Released,Crime and Punishment,Crime and Punishment,False,5.9,19"
