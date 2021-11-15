@@ -2,6 +2,8 @@ package com.codality.data.tools
 
 import com.codality.data.tools.proto.ParserConfigMessage
 import java.io.File
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ConcurrentLinkedQueue
 
 interface FileParser {
 
@@ -22,4 +24,5 @@ interface FileParser {
 
     fun parse(file: File): Pair<String, ByteArray>
 
+    fun parseToQueue(file: File, queue: ConcurrentLinkedQueue<Pair<String, ByteArray>>)
 }

@@ -11,6 +11,8 @@ import java.io.File
 import java.io.FileReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class JsonParser(config: ParserConfigMessage.ParserConfig): FileParser {
 
@@ -30,6 +32,10 @@ class JsonParser(config: ParserConfigMessage.ParserConfig): FileParser {
                     "\n${result}\n"
         )
         return file.nameWithoutExtension to result.toString().toByteArray()
+    }
+
+    override fun parseToQueue(file: File, queue: ConcurrentLinkedQueue<Pair<String, ByteArray>>) {
+        TODO("Not yet implemented")
     }
 
     private fun parseJson(jsonElement: JsonElement): JsonElement {

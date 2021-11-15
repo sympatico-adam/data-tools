@@ -12,17 +12,28 @@ import com.codality.data.tools.db.mongo.MongoDbClient
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
 import com.codality.data.tools.file.CsvLoaderTest
 import com.google.gson.JsonPrimitive
+import de.bwaldvogel.mongo.MongoServer
+import de.bwaldvogel.mongo.backend.memory.MemoryBackend
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.*
 import java.util.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 
 class MongoDbClientTest {
+
+    private val LOG = LoggerFactory.getLogger(MongoDbClientTest::class.java)
 
     @Test
     @Throws(Exception::class)
     fun setTest() {
+        val server = MongoServer(MemoryBackend())
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
+        server.bind(config.db.mongo.host, config.db.mongo.port)
+        val mongoDbClient = MongoDbClient(config.db.mongo.host, config.db.mongo.port)
+        val database = mongoDbClient.getDatabase("testdb")
         val document1 = Document.parse("{test: '1', arrayObj: {keyObj: 'value1'}}")
         database.getCollection("TestCollection").insertOne(document1)
         val result = mutableListOf<ByteArray>()
@@ -34,10 +45,16 @@ class MongoDbClientTest {
             JsonPrimitive("1"),
             Utils.deserializeJsonByteArray(result[0]).asJsonObject.get("test").asJsonPrimitive,
             "Incorrect return result")
+        server.shutdown()
     }
 
     @Test
     fun filterTest() {
+        val server = MongoServer(MemoryBackend())
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
+        server.bind(config.db.mongo.host, config.db.mongo.port)
+        val mongoDbClient = MongoDbClient(config.db.mongo.host, config.db.mongo.port)
+        val database = mongoDbClient.getDatabase("testdb")
         val document1 = Document.parse("{arrayObj: {keyObj: 'value1'}}}")
         val document2 = Document.parse("{arrayObj: {keyObj: 'value3'}}}")
         val document3 = Document.parse("{arrayObj: {keyObj: 'value5'}}}")
@@ -64,12 +81,17 @@ class MongoDbClientTest {
             jsonResult.asJsonObject.get("arrayObj").toString(),
             "Incorrect return result"
         )
+        server.shutdown()
     }
 
     @Throws(Exception::class)
     @Test
     fun runnableTest() {
-        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
+        val server = MongoServer(MemoryBackend())
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
+`        server.bind(config.db.mongo.host, config.db.mongo.port)
+        val mongoDbClient = MongoDbClient(config.db.mongo.host, config.db.mongo.port)
+        val database = mongoDbClient.getDatabase("testdb")
         val runner = MongoDocumentLoader(config)
         val queue = runner.getRunnableQueue()
         runner.startMongoDocumentLoader()
@@ -83,18 +105,7 @@ class MongoDbClientTest {
         val actual = mongoDbClient.getDatabase("movies_metadata_small")
         LOG.info(actual.toString())
         //assertTrue(parsedLineCount < actual + 5000)
+        server.shutdown()
     }
 
-    companion object {
-        private val LOG = LoggerFactory.getLogger(MongoDbClientTest::class.java)
-        private var hostname = "localhost"
-        private var port = 27017
-        private var mongoDbClient: MongoDbClient = MongoDbClient(hostname, port)
-        private var database: MongoDatabase = mongoDbClient.getDatabase("testdb")
-
-        @AfterAll
-        fun teardown() {
-            mongoDbClient.shutdown()
-        }
-    }
 }
