@@ -2,8 +2,8 @@ package com.codality.data.tools.file
 
 import com.codality.data.tools.CsvParser
 import com.codality.data.tools.config.YamlProperties
-import org.codehaus.jettison.json.JSONException
-import org.codehaus.jettison.json.JSONObject
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.*
@@ -15,9 +15,7 @@ class CsvLoaderTest {
     @Test
     fun jsonizeBrokenCsv() {
         val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
-        val regex = config.format!!.csv!!.regex
-        val fields = config.format!!.csv!!.fieldsList
-        val result = CsvParser(regex, fields)
+        val result = CsvParser(config)
                     .parse(
                         File(
                             CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file
@@ -30,9 +28,7 @@ class CsvLoaderTest {
     @Test
     fun jsonStandardizeCsv() {
         val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yaml")!!.file))
-        val regex = config.format!!.csv!!.regex
-        val fields = config.format!!.csv!!.fieldsList
-        val result = CsvParser(regex, fields)
+        val result = CsvParser(config)
             .parse(
                 File(
                     CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file
@@ -58,7 +54,7 @@ class CsvLoaderTest {
         }
     }
 
-    @Throws(JSONException::class, IOException::class)
+    @Throws(IOException::class)
     fun testDelimiter() {
         val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
         val delimiter = config.format!!.csv!!.regex
@@ -69,14 +65,14 @@ class CsvLoaderTest {
             while (br.readLine().also { l = it } != null) {
                 val splitLine = l.split(delimiter.toRegex()).toTypedArray()
                 println("$splitLine\n")
-                val json = JSONObject()
-                json.put("id", splitLine[5])
-                json.put("budget", splitLine[2])
-                json.put("genre", splitLine[3])
-                json.put("popularity", splitLine[10])
-                json.put("company", splitLine[12])
-                json.put("date", splitLine[14])
-                json.put("revenue", splitLine[15])
+                val json = JsonObject()
+                json.add("id", JsonPrimitive(splitLine[5]))
+                json.add("budget", JsonPrimitive(splitLine[2]))
+                json.add("genre", JsonPrimitive(splitLine[3]))
+                json.add("popularity", JsonPrimitive(splitLine[10]))
+                json.add("company", JsonPrimitive(splitLine[12]))
+                json.add("date", JsonPrimitive(splitLine[14]))
+                json.add("revenue", JsonPrimitive(splitLine[15]))
                 println(json.toString())
             }
         }

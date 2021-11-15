@@ -1,41 +1,37 @@
 package com.codality.data.tools
 
-import com.codality.data.tools.file.CsvLoader
 import com.codality.data.tools.proto.ParserConfigMessage
-import com.google.gson.JsonIOException
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import org.slf4j.LoggerFactory
 import java.io.*
 
-class CsvParser(pattern: String, private val fields: List<ParserConfigMessage.CsvField>) {
+class CsvParser(config: ParserConfigMessage.ParserConfig): FileParser {
 
-    private val regex = Regex(pattern)
+    private val regex = Regex(config.format.csv.regex)
+    private val fields = config.format.csv.fieldsList
 
     @Throws(IOException::class)
-    fun parse(file: File): Pair<String, ByteArray> {
+    override fun parse(file: File): Pair<String, ByteArray> {
         LOG.info("Streaming json file:\n${file.path}\n")
         val result = parseCsv(InputStreamReader(BufferedInputStream(FileInputStream(file))))
-        LOG.info(
-            "*** finished parsing\n" +
+        LOG.info("*** finished parsing\n" +
                     "*** ${file.name} " +
-                    "***********************" +
-                    "\n${result}\n"
-        )
+                    "***********************")
         return (file.name to result.toByteArray())
     }
 
-    fun parseCsv(reader: InputStreamReader): String {
+    private fun parseCsv(reader: InputStreamReader): String {
         var lineCount = 0L
         val stringBuilder = StringBuilder()
         reader.readLines().foldRight(StringBuilder()) { line, acc ->
+            val lines = regex.split(normalize(line))
             try {
-                val splitLine = toJson(line)
+                val splitLine = mapFieldsToJson(lines)
                 acc.append("$splitLine\n".trimIndent())
                 lineCount++
             } catch (e: ArrayIndexOutOfBoundsException) {
-                // TODO - add metrics counter
-                println(line)
+                LOG.error("Problem parsing line: $line\nsplit lines: ${lines.joinToString("\n")}")
                 e.printStackTrace()
             }
             acc
@@ -44,14 +40,13 @@ class CsvParser(pattern: String, private val fields: List<ParserConfigMessage.Cs
     }
 
     @Throws(ArrayIndexOutOfBoundsException::class)
-    private fun toJson(line: CharSequence): String {
-        val splitLine = regex.split(normalize(line))
+    private fun mapFieldsToJson(lines: List<String>): String {
         val json = JsonObject()
         fields.forEach { field ->
             try {
-                json.add(field.name, JsonPrimitive(splitLine[field.sourceColumn]))
+                json.add(field.name, JsonPrimitive(lines[field.sourceColumn]))
             } catch (e: Exception) {
-                LOG.error("Failed to parse field: ${field.name}:${field.sourceColumn} - \n${splitLine.joinToString("\n")}")
+                LOG.error("Failed to parse field: ${field.name}:${field.sourceColumn} - \n${lines.joinToString("\n")}")
                 e.printStackTrace()
             }
         }
@@ -65,6 +60,6 @@ class CsvParser(pattern: String, private val fields: List<ParserConfigMessage.Cs
     }
 
     companion object {
-        private val LOG = LoggerFactory.getLogger(CsvLoader::class.java)
+        private val LOG = LoggerFactory.getLogger(CsvParser::class.java)
     }
 }

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.mongodb.client.MongoDatabase
 import org.bson.Document
 import org.slf4j.LoggerFactory
-import com.codality.data.tools.JsonParser
+import com.codality.data.tools.Utils
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
@@ -15,6 +15,8 @@ class MongoRunnable(
     private val mongoDatabase: MongoDatabase,
     private val queue: ConcurrentLinkedQueue<Pair<String, ByteArray>>
 ) : Runnable {
+
+    private val LOG = LoggerFactory.getLogger(MongoRunnable::class.java)
 
     override fun run() {
         while (!isShuttingDown.get()) {
@@ -36,7 +38,6 @@ class MongoRunnable(
 
     private fun parseQueueMessage() {
         while (queue.isNotEmpty()) {
-            val jsonParser = JsonParser()
             val messagePair = queue.poll()
             val collection = messagePair.first
             val byteArray = messagePair.second
@@ -44,18 +45,18 @@ class MongoRunnable(
                 Thread.sleep(1000)
             } else {
                 try {
-                    val json = jsonParser.deserializeJsonByteArray(byteArray)
+                    val json = Utils.deserializeJsonByteArray(byteArray)
                     if (json.isJsonObject && !json.isJsonNull) {
-                        val jsonObject = jsonParser.deserializeJsonObject(json)
+                        val jsonObject = Utils.deserializeJsonObject(json)
                         LOG.info("json loaded:\n${jsonObject}\n")
                         mongoDatabase.getCollection(collection)
-                            .insertOne(Document(jsonParser.jsonToMap(jsonObject)))
+                            .insertOne(Document(Utils.jsonToMap(jsonObject)))
                     } else if (json.isJsonArray && !json.isJsonNull && !json.asJsonArray.isEmpty) {
                         val documents = mutableListOf<Document>()
-                        jsonParser.deserializeJsonArray(json)
+                        Utils.deserializeJsonArray(json)
                             .fold(documents) { acc, element ->
                                 if (element.isJsonObject)
-                                    acc.add(Document(jsonParser.jsonToMap(element)))
+                                    acc.add(Document(Utils.jsonToMap(element)))
                                 acc
                             }
                         if (documents.isNotEmpty())
@@ -82,7 +83,6 @@ class MongoRunnable(
     }
 
     companion object {
-        private val LOG = LoggerFactory.getLogger(MongoRunnable::class.java)
         private val isShuttingDown = AtomicBoolean(false)
     }
 }

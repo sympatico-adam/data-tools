@@ -2,11 +2,12 @@ import com.google.protobuf.gradle.*
 import org.gradle.kotlin.dsl.provider.gradleKotlinDslOf
 
 plugins {
-    id("idea")
-    id("java-library")
+    java
+    `java-library`
+    idea
     id("maven-publish")
     id("com.google.protobuf") version "0.8.17"
-    kotlin("jvm") version "1.5.31"
+    kotlin("jvm")
 
 }
 

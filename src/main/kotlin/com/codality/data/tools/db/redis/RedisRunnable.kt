@@ -1,11 +1,9 @@
 package com.codality.data.tools.db.redis
 
+import com.codality.data.tools.Utils
 import io.lettuce.core.api.sync.RedisCommands
-import org.apache.commons.lang3.tuple.Pair
-import org.codehaus.jettison.json.JSONException
-import org.codehaus.jettison.json.JSONObject
+
 import org.slf4j.LoggerFactory
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -19,9 +17,9 @@ class RedisRunnable(private val redisCommands: RedisCommands<String, ByteArray>)
                     val messagePair = queue.poll()
                     if (messagePair != null) {
                         try {
-                            val json = JSONObject(String(messagePair.value, StandardCharsets.UTF_8))
-                            redisCommands[messagePair.key] = messagePair.value
-                        } catch (e: JSONException) {
+                            val json = Utils.deserializeJsonByteArray(messagePair.second)
+                            redisCommands[messagePair.first] = messagePair.second
+                        } catch (e: Exception) {
                             e.printStackTrace()
                         }
                     } else {
