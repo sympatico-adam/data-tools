@@ -1,61 +1,72 @@
 package com.codality.data.tools
 
-import com.codality.data.tools.file.CsvLoader
 import com.codality.data.tools.proto.ParserConfigMessage
-import com.google.gson.JsonIOException
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import org.slf4j.LoggerFactory
 import java.io.*
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ConcurrentLinkedQueue
 
-class CsvParser(pattern: String, private val fields: List<ParserConfigMessage.CsvField>) {
+class CsvParser(config: ParserConfigMessage.ParserConfig): FileParser {
 
-    private val regex = Regex(pattern)
+    private val regex = Regex(config.format.csv.regex)
+    private val fields = config.format.csv.fieldsList
 
     @Throws(IOException::class)
-    fun parse(file: File): Pair<String, ByteArray> {
+    override fun parse(file: File): Pair<String, ByteArray> {
         LOG.info("Streaming json file:\n${file.path}\n")
         val result = parseCsv(InputStreamReader(BufferedInputStream(FileInputStream(file))))
-        LOG.info(
-            "*** finished parsing\n" +
+        LOG.info("*** finished parsing\n" +
                     "*** ${file.name} " +
-                    "***********************" +
-                    "\n${result}\n"
-        )
-        return (file.name to result.toByteArray())
+                    "***********************")
+        return (file.name to result.asJsonArray.toString().toByteArray())
     }
 
-    fun parseCsv(reader: InputStreamReader): String {
-        var lineCount = 0L
-        val stringBuilder = StringBuilder()
-        reader.readLines().foldRight(StringBuilder()) { line, acc ->
+    override fun parseToQueue(file: File, queue: ConcurrentLinkedQueue<Pair<String, ByteArray>>) {
+        parseCsv(InputStreamReader(BufferedInputStream(FileInputStream(file)))).asJsonArray.toList()
+            .stream().forEach { line ->
+                queue.add(file.nameWithoutExtension to line.toString().toByteArray())
+            }
+    }
+
+    fun parse(csv: String): JsonArray {
+        return parseCsv(InputStreamReader(ByteArrayInputStream(csv.toByteArray())))
+    }
+
+    private fun parseCsv(reader: InputStreamReader): JsonArray {
+        return reader.readLines().foldRight(JsonArray()) { line, acc ->
+            val lines = regex.split(normalize(line))
             try {
-                val splitLine = toJson(line)
-                acc.append("$splitLine\n".trimIndent())
-                lineCount++
+                val splitLine = mapFieldsToJson(lines)
+                acc.add(splitLine)
             } catch (e: ArrayIndexOutOfBoundsException) {
-                // TODO - add metrics counter
-                println(line)
+                LOG.error("Problem parsing line: $line\nsplit lines: ${lines.joinToString("\n")}")
                 e.printStackTrace()
             }
             acc
         }
-        return stringBuilder.toString()
     }
 
     @Throws(ArrayIndexOutOfBoundsException::class)
-    private fun toJson(line: CharSequence): String {
-        val splitLine = regex.split(normalize(line))
+    private fun mapFieldsToJson(lines: List<String>): JsonObject {
         val json = JsonObject()
-        fields.forEach { field ->
-            try {
-                json.add(field.name, JsonPrimitive(splitLine[field.sourceColumn]))
-            } catch (e: Exception) {
-                LOG.error("Failed to parse field: ${field.name}:${field.sourceColumn} - \n${splitLine.joinToString("\n")}")
-                e.printStackTrace()
+        if (fields.isNotEmpty()) {
+            fields.forEach { field ->
+                try {
+                    json.add(field.name, JsonPrimitive(lines[field.sourceColumn]))
+                } catch (e: Exception) {
+                    LOG.error("Failed to parse field: ${field.name}:${field.sourceColumn} - \n${lines.joinToString("\n")}")
+                    e.printStackTrace()
+                }
+            }
+        } else {
+            lines.forEachIndexed { idx, line ->
+                json.add(idx.toString(), JsonPrimitive(line))
             }
         }
-        return json.toString()
+        return json
     }
 
     private fun normalize(line: CharSequence): String {
@@ -65,6 +76,6 @@ class CsvParser(pattern: String, private val fields: List<ParserConfigMessage.Cs
     }
 
     companion object {
-        private val LOG = LoggerFactory.getLogger(CsvLoader::class.java)
+        private val LOG = LoggerFactory.getLogger(CsvParser::class.java)
     }
 }

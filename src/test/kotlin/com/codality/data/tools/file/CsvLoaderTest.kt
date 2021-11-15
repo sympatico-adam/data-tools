@@ -1,44 +1,47 @@
 package com.codality.data.tools.file
 
 import com.codality.data.tools.CsvParser
-import com.codality.data.tools.config.YamlProperties
-import org.codehaus.jettison.json.JSONException
-import org.codehaus.jettison.json.JSONObject
+import com.codality.data.tools.Utils
+import com.codality.data.tools.config.ParserConf
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.regex.Pattern
 
 class CsvLoaderTest {
 
     @Throws(IOException::class)
-    @Test
     fun jsonizeBrokenCsv() {
-        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
-        val regex = config.format!!.csv!!.regex
-        val fields = config.format!!.csv!!.fieldsList
-        val result = CsvParser(regex, fields)
-                    .parse(
-                        File(
-                            CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file
-                        )
-                    )
-        LOG.info(String(result.second))
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
+        val queue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
+        CsvParser(config)
+            .parseToQueue(
+                File(CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file),
+                queue
+            )
+        var count = 0
+        while (queue.isNotEmpty()) {
+            count++
+        }
+        LOG.info("Total messages: $count")
     }
 
     @Throws(IOException::class)
-    @Test
     fun jsonStandardizeCsv() {
-        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yaml")!!.file))
-        val regex = config.format!!.csv!!.regex
-        val fields = config.format!!.csv!!.fieldsList
-        val result = CsvParser(regex, fields)
-            .parse(
-                File(
-                    CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file
-                )
-            )
-        LOG.info(String(result.second))
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yml")!!.file))
+        val queue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
+        CsvParser(config)
+            .parseToQueue(
+                File(CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file),
+                queue)
+        var count = 0
+        while (queue.isNotEmpty()) {
+            count++
+        }
+        LOG.info("Total messages: $count")
     }
 
     @Test
@@ -52,34 +55,42 @@ class CsvLoaderTest {
         val splitter2 = Pattern.compile("""(?=[^\s]),(?=[^\s])""")
         //Matcher m = splitter.matcher(str);
         val split = splitter2.split(str)
-        //System.out.println("Split str [" + split.length + "]: " + Arrays.toString(split));
+        //System.out.LOG.info("Split str [" + split.length + "]: " + Arrays.toString(split));
         for (p in split) {
             LOG.info(p)
         }
     }
 
-    @Throws(JSONException::class, IOException::class)
+    @Throws(IOException::class)
+    @Test
     fun testDelimiter() {
-        val config = YamlProperties().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yaml")!!.file))
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
         val delimiter = config.format!!.csv!!.regex
         val line =
             "False,,0,\"[{'id': 80, 'name': 'Crime'}, {'id': 18, 'name': 'Drama'}]\",,74295,tt0086199,fi,Rikos ja rangaistus,\"An adaptation of Dostoyevsky's novel, updated to present-day Helsinki. Slaughterhouse worker Rahikainen murders a man, and is forced to live with the consequences of his actions...\",1.473622,/aqu3HrpHaY8MR2ZOIfuUTWC3r3N.jpg,\"[{'name': 'Villealfa Filmproduction Oy', 'id': 2303}]\",\"[{'iso_3166_1': 'FI', 'name': 'Finland'}]\",1983-12-02,0,93.0,\"[{'iso_639_1': 'fi', 'name': 'suomi'}]\",Released,Crime and Punishment,Crime and Punishment,False,5.9,19"
-        BufferedReader(StringReader(line)).use { br ->
-            var l: String
-            while (br.readLine().also { l = it } != null) {
-                val splitLine = l.split(delimiter.toRegex()).toTypedArray()
-                println("$splitLine\n")
-                val json = JSONObject()
-                json.put("id", splitLine[5])
-                json.put("budget", splitLine[2])
-                json.put("genre", splitLine[3])
-                json.put("popularity", splitLine[10])
-                json.put("company", splitLine[12])
-                json.put("date", splitLine[14])
-                json.put("revenue", splitLine[15])
-                println(json.toString())
-            }
-        }
+
+        val splitLine = line.split(delimiter.toRegex()).toTypedArray()
+        LOG.info("$splitLine\n")
+        val json = JsonObject()
+        json.add("id", JsonPrimitive(splitLine[5]))
+        json.add("budget", JsonPrimitive(splitLine[2]))
+        json.add("genre", JsonPrimitive(splitLine[3]))
+        json.add("popularity", JsonPrimitive(splitLine[10]))
+        json.add("company", JsonPrimitive(splitLine[12]))
+        json.add("date", JsonPrimitive(splitLine[14]))
+        json.add("revenue", JsonPrimitive(splitLine[15]))
+        LOG.info(json.toString())
+    }
+
+    @Test
+    fun testNoFields() {
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("no-fields.yml")!!.file))
+        val delimiter = config.format!!.csv!!.regex
+        val line =
+            "False,,0,\"[{'id': 80, 'name': 'Crime'}, {'id': 18, 'name': 'Drama'}]\",,74295,tt0086199,fi,Rikos ja rangaistus,\"An adaptation of Dostoyevsky's novel, updated to present-day Helsinki. Slaughterhouse worker Rahikainen murders a man, and is forced to live with the consequences of his actions...\",1.473622,/aqu3HrpHaY8MR2ZOIfuUTWC3r3N.jpg,\"[{'name': 'Villealfa Filmproduction Oy', 'id': 2303}]\",\"[{'iso_3166_1': 'FI', 'name': 'Finland'}]\",1983-12-02,0,93.0,\"[{'iso_639_1': 'fi', 'name': 'suomi'}]\",Released,Crime and Punishment,Crime and Punishment,False,5.9,19"
+
+        val result = CsvParser(config).parse(line)
+        LOG.info(result.asJsonArray.toString())
     }
 
     companion object {

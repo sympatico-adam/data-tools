@@ -3,4 +3,4 @@
  */
 
 rootProject.name = "data-tools"
-//include("proto")
+include("proto")

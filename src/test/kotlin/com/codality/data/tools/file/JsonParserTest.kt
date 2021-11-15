@@ -3,37 +3,33 @@ package com.codality.data.tools.file
 import org.slf4j.LoggerFactory
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
 import com.codality.data.tools.JsonParser
-import org.junit.jupiter.api.Test
-import java.util.*
+import com.codality.data.tools.config.ParserConf
+import de.bwaldvogel.mongo.MongoServer
+import de.bwaldvogel.mongo.backend.memory.MemoryBackend
+import java.io.File
 import kotlin.time.ExperimentalTime
+import org.junit.jupiter.api.Test
 
 class JsonParserTest {
-    private val config = Properties()
-
-    /*private val server = MongoServer(MemoryBackend())
-    private var serverAddress = server.bind()*/
-    private val hostname = "localhost"
-    private val port = 27017
-    private val loader = MongoDocumentLoader(hostname, port)
-    /*private val mongo = MongoDbClient(hostname, port).getClient()*/
+    private val server = MongoServer(MemoryBackend())
+    val LOG = LoggerFactory.getLogger(JsonParserTest::class.java)
 
     @ExperimentalTime
     @Test
     fun loadJsonFiles() {
-        loader.startMongoDocumentLoader(4, "testdb")
-        val files = FileLoader.findFilesInPath("src/test/resources/", "json")
-        val parser = JsonParser()
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
+        server.bind(config.db.mongo.host, config.db.mongo.port)
+        val loader = MongoDocumentLoader(config)
+        loader.startMongoDocumentLoader()
+        val files = FileLoader.findFilesInPath("data/", "json")
+        val parser = JsonParser(config)
         val queue = loader.getRunnableQueue()
         //      val testdb = mongo.getDatabase("testdb")
         files.forEach { file ->
             val jsonPair = parser.parse(file)
-            queue.add(jsonPair.first to jsonPair.second)
-            //          LOG.info("Document count: ${mongo.getDatabase("DocumentLoaderDB").getCollection("jsonCollection").countDocuments()}")
+            queue.add(jsonPair)
         }
         loader.shutdown()
-    }
-
-    companion object {
-        private val LOG = LoggerFactory.getLogger(JsonParserTest::class.java)
+        server.shutdown()
     }
 }
