@@ -1,10 +1,13 @@
 package com.codality.data.tools
 
 import com.codality.data.tools.proto.ParserConfigMessage
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import org.slf4j.LoggerFactory
 import java.io.*
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class CsvParser(config: ParserConfigMessage.ParserConfig): FileParser {
 
@@ -18,39 +21,52 @@ class CsvParser(config: ParserConfigMessage.ParserConfig): FileParser {
         LOG.info("*** finished parsing\n" +
                     "*** ${file.name} " +
                     "***********************")
-        return (file.name to result.toByteArray())
+        return (file.name to result.asJsonArray.toString().toByteArray())
     }
 
-    private fun parseCsv(reader: InputStreamReader): String {
-        var lineCount = 0L
-        val stringBuilder = StringBuilder()
-        reader.readLines().foldRight(StringBuilder()) { line, acc ->
+    override fun parseToQueue(file: File, queue: ConcurrentLinkedQueue<Pair<String, ByteArray>>) {
+        parseCsv(InputStreamReader(BufferedInputStream(FileInputStream(file)))).asJsonArray.toList()
+            .stream().forEach { line ->
+                queue.add(file.nameWithoutExtension to line.toString().toByteArray())
+            }
+    }
+
+    fun parse(csv: String): JsonArray {
+        return parseCsv(InputStreamReader(ByteArrayInputStream(csv.toByteArray())))
+    }
+
+    private fun parseCsv(reader: InputStreamReader): JsonArray {
+        return reader.readLines().foldRight(JsonArray()) { line, acc ->
             val lines = regex.split(normalize(line))
             try {
                 val splitLine = mapFieldsToJson(lines)
-                acc.append("$splitLine\n".trimIndent())
-                lineCount++
+                acc.add(splitLine)
             } catch (e: ArrayIndexOutOfBoundsException) {
                 LOG.error("Problem parsing line: $line\nsplit lines: ${lines.joinToString("\n")}")
                 e.printStackTrace()
             }
             acc
         }
-        return stringBuilder.toString()
     }
 
     @Throws(ArrayIndexOutOfBoundsException::class)
-    private fun mapFieldsToJson(lines: List<String>): String {
+    private fun mapFieldsToJson(lines: List<String>): JsonObject {
         val json = JsonObject()
-        fields.forEach { field ->
-            try {
-                json.add(field.name, JsonPrimitive(lines[field.sourceColumn]))
-            } catch (e: Exception) {
-                LOG.error("Failed to parse field: ${field.name}:${field.sourceColumn} - \n${lines.joinToString("\n")}")
-                e.printStackTrace()
+        if (fields.isNotEmpty()) {
+            fields.forEach { field ->
+                try {
+                    json.add(field.name, JsonPrimitive(lines[field.sourceColumn]))
+                } catch (e: Exception) {
+                    LOG.error("Failed to parse field: ${field.name}:${field.sourceColumn} - \n${lines.joinToString("\n")}")
+                    e.printStackTrace()
+                }
+            }
+        } else {
+            lines.forEachIndexed { idx, line ->
+                json.add(idx.toString(), JsonPrimitive(line))
             }
         }
-        return json.toString()
+        return json
     }
 
     private fun normalize(line: CharSequence): String {
