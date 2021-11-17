@@ -20,7 +20,9 @@ import java.io.*
 import java.util.*
 import kotlin.time.ExperimentalTime
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 
 class MongoDbClientTest {
 
@@ -30,17 +32,20 @@ class MongoDbClientTest {
         private val LOG = LoggerFactory.getLogger(MongoDbClientTest::class.java)
         private val config =
             ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
-        private val server = MongoServer(MemoryBackend())
 
-        @BeforeAll
-        fun setup() {
-            server.bind(config.db.mongo.host, config.db.mongo.port)
-        }
+    }
 
-        @AfterAll
-        fun tearDown() {
-            server.shutdown()
-        }
+    lateinit var server: MongoServer
+
+    @BeforeEach
+    fun setup() {
+        server = MongoServer(MemoryBackend())
+        server.bind(config.db.mongo.host, config.db.mongo.port)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        server.shutdown()
     }
 
     @Test
@@ -97,13 +102,12 @@ class MongoDbClientTest {
 
     @ExperimentalTime
     @Throws(Exception::class)
-    @Test
     fun runnableTest() {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-files.yml")!!.file))
         val parser = CsvParser(config)
         val runner = MongoDocumentLoader(config, parser.getQueue())
         runner.startMongoDocumentLoader()
-        val files = findFilesInPath("data/", "csv")
+        val files = findFilesInPath("src/test/resources/", "csv")
         files.forEach { file ->
             parser.parse(file)
         }

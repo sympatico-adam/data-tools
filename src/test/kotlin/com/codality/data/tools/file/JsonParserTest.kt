@@ -10,7 +10,9 @@ import de.bwaldvogel.mongo.backend.memory.MemoryBackend
 import java.io.File
 import kotlin.time.ExperimentalTime
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class JsonParserTest {
@@ -19,21 +21,23 @@ class JsonParserTest {
     companion object {
 
         private val LOG = LoggerFactory.getLogger(JsonParserTest::class.java)
-        private val config =
-            ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
-        private val server = MongoServer(MemoryBackend())
 
-        @BeforeAll
-        fun setup() {
-            server.bind(config.db.mongo.host, config.db.mongo.port)
-        }
-
-        @AfterAll
-        fun tearDown() {
-            server.shutdown()
-        }
     }
 
+    private val config =
+        ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
+    lateinit var server: MongoServer
+
+    @BeforeEach
+    fun setup() {
+        server = MongoServer(MemoryBackend())
+        server.bind(config.db.mongo.host, config.db.mongo.port)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        server.shutdown()
+    }
     @ExperimentalTime
     @Test
     fun loadJsonFiles() {
@@ -41,7 +45,7 @@ class JsonParserTest {
         val parser = JsonParser(config)
         val loader = MongoDocumentLoader(config, parser.getQueue())
         loader.startMongoDocumentLoader()
-        val files = FileParser.findFilesInPath("data/", "json")
+        val files = FileParser.findFilesInPath("src/test/resources/", "json")
         files.forEach { file ->
             LOG.info("parsing test file: ${file.nameWithoutExtension}")
             parser.parse(file)

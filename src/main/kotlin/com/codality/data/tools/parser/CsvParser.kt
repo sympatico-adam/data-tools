@@ -74,7 +74,7 @@ class CsvParser(val config: ParserConfigMessage.ParserConfig): FileParser {
                     try {
                         json.add(field.key, JsonPrimitive(columns[field.value]))
                     } catch (e: IndexOutOfBoundsException) {
-                        LOG.error(
+                        LOG.debug(
                             "Line contains wrong number of columns: ${field.key}:${field.value} - \n${
                                 columns.joinToString(
                                     "\n"
