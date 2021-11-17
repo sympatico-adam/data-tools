@@ -1,35 +1,51 @@
 package com.codality.data.tools.file
 
+import com.codality.data.tools.parser.FileParser
 import org.slf4j.LoggerFactory
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
-import com.codality.data.tools.JsonParser
+import com.codality.data.tools.parser.JsonParser
 import com.codality.data.tools.config.ParserConf
 import de.bwaldvogel.mongo.MongoServer
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend
 import java.io.File
 import kotlin.time.ExperimentalTime
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 class JsonParserTest {
-    private val server = MongoServer(MemoryBackend())
-    val LOG = LoggerFactory.getLogger(JsonParserTest::class.java)
+
+
+    companion object {
+
+        private val LOG = LoggerFactory.getLogger(JsonParserTest::class.java)
+        private val config =
+            ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
+        private val server = MongoServer(MemoryBackend())
+
+        @BeforeAll
+        fun setup() {
+            server.bind(config.db.mongo.host, config.db.mongo.port)
+        }
+
+        @AfterAll
+        fun tearDown() {
+            server.shutdown()
+        }
+    }
 
     @ExperimentalTime
     @Test
     fun loadJsonFiles() {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
-        server.bind(config.db.mongo.host, config.db.mongo.port)
-        val loader = MongoDocumentLoader(config)
-        loader.startMongoDocumentLoader()
-        val files = FileLoader.findFilesInPath("data/", "json")
         val parser = JsonParser(config)
-        val queue = loader.getRunnableQueue()
-        //      val testdb = mongo.getDatabase("testdb")
+        val loader = MongoDocumentLoader(config, parser.getQueue())
+        loader.startMongoDocumentLoader()
+        val files = FileParser.findFilesInPath("data/", "json")
         files.forEach { file ->
-            val jsonPair = parser.parse(file)
-            queue.add(jsonPair)
+            LOG.info("parsing test file: ${file.nameWithoutExtension}")
+            parser.parse(file)
         }
         loader.shutdown()
-        server.shutdown()
     }
 }

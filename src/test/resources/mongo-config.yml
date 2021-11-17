@@ -1,0 +1,6 @@
+db:
+  mongo:
+    host: "localhost"
+    port: 27017
+    dbName: "testdb"
+    workerCount: 4
