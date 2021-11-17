@@ -1,47 +1,59 @@
 package com.codality.data.tools.file
 
-import com.codality.data.tools.CsvParser
-import com.codality.data.tools.Utils
+import com.codality.data.tools.parser.CsvParser
 import com.codality.data.tools.config.ParserConf
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import de.bwaldvogel.mongo.MongoServer
+import de.bwaldvogel.mongo.backend.memory.MemoryBackend
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.*
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.regex.Pattern
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeAll
 
 class CsvLoaderTest {
 
-    @Throws(IOException::class)
-    fun jsonizeBrokenCsv() {
-        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
-        val queue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
-        CsvParser(config)
-            .parseToQueue(
-                File(CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file),
-                queue
-            )
-        var count = 0
-        while (queue.isNotEmpty()) {
-            count++
+    companion object {
+
+        private val LOG = LoggerFactory.getLogger(CsvLoaderTest::class.java)
+        private val config =
+            ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
+        private val server = MongoServer(MemoryBackend())
+
+        @BeforeAll
+        fun setup() {
+            server.bind(config.db.mongo.host, config.db.mongo.port)
         }
-        LOG.info("Total messages: $count")
+
+        @AfterAll
+        fun tearDown() {
+            server.shutdown()
+        }
     }
 
     @Throws(IOException::class)
+    @Test
+    fun jsonizeBrokenCsv() {
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
+        val parser = CsvParser(config)
+        parser.parse(
+                File(CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file)
+            )
+        LOG.info("Total messages parsed: ${parser.getQueue().size}")
+        assertEquals(19949, parser.getQueue().size)
+    }
+
+    @Throws(IOException::class)
+    @Test
     fun jsonStandardizeCsv() {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yml")!!.file))
-        val queue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
-        CsvParser(config)
-            .parseToQueue(
-                File(CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file),
-                queue)
-        var count = 0
-        while (queue.isNotEmpty()) {
-            count++
-        }
-        LOG.info("Total messages: $count")
+        val parser = CsvParser(config)
+        parser.parse(File(CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file)
+            )
+        LOG.info("Total messages: ${parser.getQueue().size}")
     }
 
     @Test
@@ -85,15 +97,12 @@ class CsvLoaderTest {
     @Test
     fun testNoFields() {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("no-fields.yml")!!.file))
-        val delimiter = config.format!!.csv!!.regex
         val line =
             "False,,0,\"[{'id': 80, 'name': 'Crime'}, {'id': 18, 'name': 'Drama'}]\",,74295,tt0086199,fi,Rikos ja rangaistus,\"An adaptation of Dostoyevsky's novel, updated to present-day Helsinki. Slaughterhouse worker Rahikainen murders a man, and is forced to live with the consequences of his actions...\",1.473622,/aqu3HrpHaY8MR2ZOIfuUTWC3r3N.jpg,\"[{'name': 'Villealfa Filmproduction Oy', 'id': 2303}]\",\"[{'iso_3166_1': 'FI', 'name': 'Finland'}]\",1983-12-02,0,93.0,\"[{'iso_639_1': 'fi', 'name': 'suomi'}]\",Released,Crime and Punishment,Crime and Punishment,False,5.9,19"
 
-        val result = CsvParser(config).parse(line)
-        LOG.info(result.asJsonArray.toString())
+        val parser = CsvParser(config)
+        parser.parse("testNoFields", line)
+        LOG.info("Lines parsed: ${parser.getQueue().size}")
     }
 
-    companion object {
-        private val LOG = LoggerFactory.getLogger(CsvLoaderTest::class.java)
-    }
 }

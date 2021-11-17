@@ -7,9 +7,11 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.time.ExperimentalTime
 
-class MongoDocumentLoader(private val config: ParserConfigMessage.ParserConfig) {
+class MongoDocumentLoader(
+    private val config: ParserConfigMessage.ParserConfig,
+    private val queue: ConcurrentLinkedQueue<Pair<String, ByteArray>>
+    ) {
 
-    private val queue: ConcurrentLinkedQueue<Pair<String, ByteArray>> = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
     private var executorService: ExecutorService = Executors.newCachedThreadPool()
     private var runnables: MutableList<MongoRunnable> = mutableListOf()
     val mongoClient = MongoDbClient(config.db.mongo.host, config.db.mongo.port)

@@ -1,0 +1,10 @@
+format:
+  csv:
+    hasHeader: true
+    regex: ","
+db:
+  mongo:
+    host: "localhost"
+    port: 27017
+    dbName: "testdb"
+    workerCount: 4
