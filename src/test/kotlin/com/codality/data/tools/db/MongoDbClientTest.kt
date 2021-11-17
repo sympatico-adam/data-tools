@@ -32,12 +32,12 @@ class MongoDbClientTest {
             ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
         private val server = MongoServer(MemoryBackend())
 
-        //@BeforeAll
+        @BeforeAll
         fun setup() {
             server.bind(config.db.mongo.host, config.db.mongo.port)
         }
 
-        //@AfterAll
+        @AfterAll
         fun tearDown() {
             server.shutdown()
         }
