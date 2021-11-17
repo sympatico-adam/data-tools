@@ -11,27 +11,30 @@ import org.slf4j.LoggerFactory
 import java.io.*
 import java.util.regex.Pattern
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 
 class CsvLoaderTest {
 
     companion object {
-
         private val LOG = LoggerFactory.getLogger(CsvLoaderTest::class.java)
-        private val config =
-            ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
-        private val server = MongoServer(MemoryBackend())
+    }
 
-        @BeforeAll
-        fun setup() {
-            server.bind(config.db.mongo.host, config.db.mongo.port)
-        }
+    private val config =
+        ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
+    lateinit var server: MongoServer
 
-        @AfterAll
-        fun tearDown() {
-            server.shutdown()
-        }
+    @BeforeEach
+    fun setup() {
+        server = MongoServer(MemoryBackend())
+        server.bind(config.db.mongo.host, config.db.mongo.port)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        server.shutdown()
     }
 
     @Throws(IOException::class)
