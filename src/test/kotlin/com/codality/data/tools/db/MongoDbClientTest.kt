@@ -11,6 +11,7 @@ import com.codality.data.tools.db.mongo.MongoDbClient
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
 import com.codality.data.tools.file.CsvLoaderTest
 import com.codality.data.tools.parser.FileParser.Companion.findFilesInPath
+import com.codality.data.tools.parser.JsonParser
 import com.google.gson.JsonPrimitive
 import de.bwaldvogel.mongo.MongoServer
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend
@@ -107,11 +108,20 @@ class MongoDbClientTest {
         val parser = CsvParser(config)
         val runner = MongoDocumentLoader(config, parser.getQueue())
         runner.startMongoDocumentLoader()
-        val files = findFilesInPath("src/test/resources/", "csv")
+        val files = findFilesInPath("data/", "csv")
         files.forEach { file ->
             parser.parse(file)
         }
         runner.shutdown()
+        val configJson = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
+        val jsonParser = JsonParser(configJson)
+        val jsonFiles = findFilesInPath("data/", "json")
+        val jsonRunner = MongoDocumentLoader(configJson, jsonParser.getQueue())
+        jsonRunner.startMongoDocumentLoader()
+        jsonFiles.forEach { file ->
+            jsonParser.parse(file)
+        }
+        jsonRunner.shutdown()
         LOG.info("Collections: ${
             MongoDbClient(config.db.mongo.host, config.db.mongo.port)
                 .getDatabase(config.db.mongo.dbName)

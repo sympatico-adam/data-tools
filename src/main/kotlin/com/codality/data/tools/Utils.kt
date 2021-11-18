@@ -57,7 +57,7 @@ object Utils {
 
     fun createJsonObject(key: String, jsonElement: JsonElement): JsonObject {
         val json = JsonObject()
-        json.add(key.replace(".", "_"), jsonElement)
+        json.add(key, jsonElement)
         return gsonBuilder.fromJson(json, JsonObject::class.java)
     }
 
