@@ -1,6 +1,7 @@
 package com.codality.data.tools.parser
 
 import com.codality.data.tools.Utils
+import com.codality.data.tools.Utils.createJsonObject
 import com.codality.data.tools.proto.ParserConfigMessage
 import com.google.gson.*
 import org.slf4j.Logger
@@ -19,7 +20,7 @@ class JsonParser(config: ParserConfigMessage.ParserConfig): FileParser {
         LOG.info("Streaming json file:\n${file.path}\n")
         val json = Utils.deserializeJsonFile(file)
         LOG.info("normalizing json structure:\n$json\n")
-        val result = parseJson(json)
+        val result = parseElements(json)
         LOG.info(
             "\n*** finished parsing***\n " +
                     file.name +
@@ -33,45 +34,31 @@ class JsonParser(config: ParserConfigMessage.ParserConfig): FileParser {
         return parserQueue
     }
 
-    private fun parseJson(jsonElement: JsonElement): JsonElement {
-        return if (parseNested)
-            parseNestedElements(jsonElement)
-        else
-            parseElements(jsonElement)
-
-    }
-
-    private fun parseNestedElements(jsonElement: JsonElement): JsonElement {
-        return if (jsonElement.isJsonObject)
-            parseNestedObjects(jsonElement.asJsonObject)
-        else if (jsonElement.isJsonArray)
-            jsonElement.asJsonArray.fold(JsonArray()) { acc, element ->
-                if (element.isJsonObject)
-                    acc.add(parseNestedObjects(element.asJsonObject))
-                else if (element.isJsonArray && element.asJsonArray.isEmpty)
-                    acc.add(JsonNull.INSTANCE)
-                else
-                    acc.add(element)
-                acc
-            }
-        else
-            jsonElement
-    }
 
     private fun parseElements(jsonElement: JsonElement): JsonElement {
         return if (jsonElement.isJsonObject) {
-            parseObject(jsonElement.asJsonObject)
-        } else if (jsonElement.isJsonArray) {
+            if (parseNested)
+                parseNestedObjects(jsonElement.asJsonObject)
+            else
+                parseObject(jsonElement.asJsonObject)
+        }
+        else if (jsonElement.isJsonArray)
             jsonElement.asJsonArray.fold(JsonArray()) { acc, element ->
                 if (element.isJsonObject)
-                    acc.add(parseObject(element.asJsonObject))
+                    if (parseNested)
+                        acc.add(parseNestedObjects(element.asJsonObject))
+                    else
+                        acc.add(parseObject(element.asJsonObject))
+                else if (element.isJsonArray && element.asJsonArray.size() == 1)
+                    acc.add(parseElements(element))
                 else if (element.isJsonArray && element.asJsonArray.isEmpty)
                     acc.add(JsonNull.INSTANCE)
                 else
                     acc.add(element)
                 acc
             }
-        } else jsonElement
+        else
+            createJsonObject("value", jsonElement)
     }
 
     private fun parseObject(jsonObject: JsonObject): JsonObject {
