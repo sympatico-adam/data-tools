@@ -38,13 +38,13 @@ class MongoDbClientTest {
 
     lateinit var server: MongoServer
 
-    //@BeforeEach
+    @BeforeEach
     fun setup() {
         server = MongoServer(MemoryBackend())
         server.bind(config.db.mongo.host, config.db.mongo.port)
     }
 
-    //@AfterEach
+    @AfterEach
     fun tearDown() {
         server.shutdown()
     }
