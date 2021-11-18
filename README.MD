@@ -1,5 +1,5 @@
 # Overview
-The _*data-clients*_ library aims to provide generic and flexible data parsers to manage the loading of unknown
+The _*data-tools*_ library aims to provide generic and flexible data parsers to manage the loading of unknown
 data sets into a few popular back end data stores.
 
 There are some enforced opinions on the definition of a "generic" document when referring to unknown
