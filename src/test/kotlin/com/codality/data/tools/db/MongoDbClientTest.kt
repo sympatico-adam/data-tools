@@ -1,6 +1,5 @@
 package com.codality.data.tools.db
 
-import com.codality.data.tools.parser.CsvParser
 import com.codality.data.tools.Utils
 import com.codality.data.tools.config.ParserConf
 import com.mongodb.client.model.Filters
@@ -11,7 +10,7 @@ import com.codality.data.tools.db.mongo.MongoDbClient
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
 import com.codality.data.tools.file.CsvLoaderTest
 import com.codality.data.tools.parser.FileParser.Companion.findFilesInPath
-import com.codality.data.tools.parser.JsonParser
+import com.codality.data.tools.parser.ReportParser
 import com.google.gson.JsonPrimitive
 import de.bwaldvogel.mongo.MongoServer
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend
@@ -20,9 +19,7 @@ import org.junit.jupiter.api.Test
 import java.io.*
 import java.util.*
 import kotlin.time.ExperimentalTime
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 
 class MongoDbClientTest {
@@ -104,18 +101,18 @@ class MongoDbClientTest {
     @ExperimentalTime
     @Throws(Exception::class)
     fun runnableTest() {
-        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-files.yml")!!.file))
-        val parser = CsvParser(config)
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("report-files.yml")!!.file))
+        val parser = ReportParser(config)
         val runner = MongoDocumentLoader(config, parser.getQueue())
         runner.startMongoDocumentLoader()
-        val files = findFilesInPath("data/", "csv")
+        val files = findFilesInPath("/data", "csv")
         files.forEach { file ->
             parser.parse(file)
         }
         runner.shutdown()
-        val configJson = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
+       /* val configJson = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
         val jsonParser = JsonParser(configJson)
-        val jsonFiles = findFilesInPath("data/", "json")
+        val jsonFiles = findFilesInPath("/home/user/QubesIncoming/work/data/mozilla", "json")
         val jsonRunner = MongoDocumentLoader(configJson, jsonParser.getQueue())
         jsonRunner.startMongoDocumentLoader()
         jsonFiles.forEach { file ->
@@ -126,7 +123,7 @@ class MongoDbClientTest {
             MongoDbClient(config.db.mongo.host, config.db.mongo.port)
                 .getDatabase(config.db.mongo.dbName)
                 .listCollectionNames().joinToString("\n")
-        }")
+        }")*/
     }
 
 }

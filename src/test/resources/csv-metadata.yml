@@ -1,6 +1,6 @@
 format:
   csv:
-    regex: "(?=[^\\s]),(?=[^\\s])"
+    delimiterRegex: "(?=[^\\s]),(?=[^\\s])"
     fields:
       - sourceColumn: 5
         destinationColumn: 0

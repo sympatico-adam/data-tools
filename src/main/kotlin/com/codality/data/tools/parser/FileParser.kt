@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory
 
 interface FileParser {
 
+    val config: ParserConfigMessage.ParserConfig
+
     companion object {
 
         private val LOG: Logger = LoggerFactory.getLogger(FileParser::class.java)

@@ -30,6 +30,7 @@ message RedisConf {
 message FormatConf {
   JsonConf json = 1;
   CsvConf csv = 2;
+  ReportParser report = 3;
 }
 
 message JsonConf {
@@ -37,7 +38,7 @@ message JsonConf {
 }
 
 message CsvConf {
-  string regex = 1;
+  string delimiterRegex = 1;
   bool hasHeader = 2;
   repeated CsvField fields = 3;
 }
@@ -46,4 +47,9 @@ message CsvField {
   string name = 1;
   int32 sourceColumn = 2;
   int32 destinationColumn = 3;
+}
+
+message ReportParser {
+  string delimiterRegex = 1;
+  string lineSeparator = 2;
 }

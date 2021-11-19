@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class JsonParser(config: ParserConfigMessage.ParserConfig): FileParser {
+class JsonParser(override val config: ParserConfigMessage.ParserConfig): FileParser {
 
     private val parseNested = config.format.json.parseNested
     private val parserQueue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()

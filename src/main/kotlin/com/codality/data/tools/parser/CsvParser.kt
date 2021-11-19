@@ -8,10 +8,10 @@ import java.io.*
 import java.lang.IndexOutOfBoundsException
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class CsvParser(val config: ParserConfigMessage.ParserConfig): FileParser {
+class CsvParser(override val config: ParserConfigMessage.ParserConfig): FileParser {
 
     private val parserQueue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
-    private val regex = Regex(config.format.csv.regex)
+    private val regex = Regex(config.format.csv.delimiterRegex)
     private lateinit var fields: Map<String, Int>
     private val hasHeader = config.format.csv.hasHeader
 
