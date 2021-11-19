@@ -18,16 +18,16 @@ class ReportParser(override val config: ParserConfigMessage.ParserConfig) : File
     private val regex = Regex(config.format.report.delimiterRegex)
     private val lineSeparator = Regex(config.format.report.lineSeparator)
 
-    override fun parse(file: File) {
+    override fun parse(file: File, collection: String) {
         LOG.info("Streaming csv file:\n${file.path}\n")
         val inputStream = BufferedInputStream(FileInputStream(file))
-        parseReport(file.nameWithoutExtension, inputStream)
+        parseReport(collection, inputStream)
         LOG.info("*** finished parsing\n" +
-                "*** ${file.name} " +
+                "*** $collection " +
                 "***********************")
     }
 
-    private fun parseReport(collectionName: String, inputStream: InputStream) {
+    private fun parseReport(collection: String, inputStream: InputStream) {
         val reader = inputStream.bufferedReader()
         val lines = reader.readLines()
         val boundaries = splitBoundaries(lines)
@@ -36,7 +36,7 @@ class ReportParser(override val config: ParserConfigMessage.ParserConfig) : File
                 val chunk = lines.subList(min(acc.plus(1), boundary), boundary)
                 try {
                     val columnsJson = mapColsToJson(chunk)
-                    parserQueue.add(collectionName to columnsJson.toString().toByteArray())
+                    parserQueue.add(collection to columnsJson.toString().toByteArray())
                 } catch (e: ArrayIndexOutOfBoundsException) {
                     LOG.error("Problem parsing chunk: \n$chunk\n)}")
                     e.printStackTrace()

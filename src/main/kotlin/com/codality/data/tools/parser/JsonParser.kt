@@ -16,7 +16,7 @@ class JsonParser(override val config: ParserConfigMessage.ParserConfig): FilePar
 
     private val LOG: Logger = LoggerFactory.getLogger(JsonParser::class.java)
 
-    override fun parse(file: File) {
+    override fun parse(file: File, collection: String) {
         LOG.info("Streaming json file:\n${file.path}\n")
         val json = Utils.deserializeJsonFile(file)
         LOG.info("normalizing json structure:\n$json\n")
@@ -27,7 +27,7 @@ class JsonParser(override val config: ParserConfigMessage.ParserConfig): FilePar
                     "\n***********************\n" +
                     "\n${result}\n"
         )
-        parserQueue.add(file.nameWithoutExtension to result.toString().toByteArray())
+        parserQueue.add(collection to result.toString().toByteArray())
     }
 
     override fun getQueue(): ConcurrentLinkedQueue<Pair<String, ByteArray>> {
@@ -100,7 +100,10 @@ class JsonParser(override val config: ParserConfigMessage.ParserConfig): FilePar
                 }
                 jsonResult
             } else {
-                jsonResult.add(element.key, element.value)
+                if (element.value.isJsonObject)
+                    jsonResult.add(element.key, parseNestedObjects(element.value.asJsonObject))
+                else
+                    jsonResult.add(element.key, element.value)
                 jsonResult
             }
 

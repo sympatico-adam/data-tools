@@ -43,8 +43,9 @@ class CsvLoaderTest {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
         val parser = CsvParser(config)
         parser.parse(
-                File(CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file)
-            )
+            File(CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file),
+            "movies_metadata"
+        )
         LOG.info("Total messages parsed: ${parser.getQueue().size}")
         assertEquals(19949, parser.getQueue().size)
     }
@@ -54,8 +55,7 @@ class CsvLoaderTest {
     fun jsonStandardizeCsv() {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yml")!!.file))
         val parser = CsvParser(config)
-        parser.parse(File(CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file)
-            )
+        parser.parse(File(CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file), "ratings_small")
         LOG.info("Total messages: ${parser.getQueue().size}")
     }
 

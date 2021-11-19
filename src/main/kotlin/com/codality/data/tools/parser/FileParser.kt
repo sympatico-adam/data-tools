@@ -55,7 +55,7 @@ interface FileParser {
         }
     }
 
-    fun parse(file: File)
+    fun parse(file: File, collection: String)
 
     fun getQueue(): ConcurrentLinkedQueue<Pair<String, ByteArray>>
 

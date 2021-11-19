@@ -16,10 +16,10 @@ class CsvParser(override val config: ParserConfigMessage.ParserConfig): FilePars
     private val hasHeader = config.format.csv.hasHeader
 
     @Throws(IOException::class)
-    override fun parse(file: File) {
+    override fun parse(file: File, collection: String) {
         LOG.info("Streaming csv file:\n${file.path}\n")
         val inputStream = BufferedInputStream(FileInputStream(file))
-        parseCsv(file.nameWithoutExtension, inputStream)
+        parseCsv(collection, inputStream)
         LOG.info("*** finished parsing\n" +
                     "*** ${file.name} " +
                     "***********************")
@@ -34,7 +34,7 @@ class CsvParser(override val config: ParserConfigMessage.ParserConfig): FilePars
         parseCsv(collectionName, inputStream)
     }
 
-    private fun parseCsv(collectionName: String, inputStream: InputStream) {
+    private fun parseCsv(collection: String, inputStream: InputStream) {
         val reader = inputStream.bufferedReader()
         fields = if (config.format.csv.fieldsList.isNotEmpty()) {
             config.format.csv.fieldsList.associate {
@@ -56,7 +56,7 @@ class CsvParser(override val config: ParserConfigMessage.ParserConfig): FilePars
                 val columns = regex.split(normalize(line))
                 try {
                     val columnsJson = mapColsToJson(columns)
-                    parserQueue.add(collectionName to columnsJson.toString().toByteArray())
+                    parserQueue.add(collection to columnsJson.toString().toByteArray())
                 } catch (e: ArrayIndexOutOfBoundsException) {
                     LOG.error("Problem parsing line: $line\nsplit lines: ${columns.joinToString("\n")}")
                     e.printStackTrace()

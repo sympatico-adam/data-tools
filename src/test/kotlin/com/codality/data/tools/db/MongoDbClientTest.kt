@@ -10,7 +10,7 @@ import com.codality.data.tools.db.mongo.MongoDbClient
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
 import com.codality.data.tools.file.CsvLoaderTest
 import com.codality.data.tools.parser.FileParser.Companion.findFilesInPath
-import com.codality.data.tools.parser.ReportParser
+import com.codality.data.tools.parser.JsonParser
 import com.google.gson.JsonPrimitive
 import de.bwaldvogel.mongo.MongoServer
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend
@@ -101,13 +101,13 @@ class MongoDbClientTest {
     @ExperimentalTime
     @Throws(Exception::class)
     fun runnableTest() {
-        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("report-files.yml")!!.file))
-        val parser = ReportParser(config)
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
+        val parser = JsonParser(config)
         val runner = MongoDocumentLoader(config, parser.getQueue())
         runner.startMongoDocumentLoader()
-        val files = findFilesInPath("/data", "csv")
+        val files = findFilesInPath("data/", "json")
         files.forEach { file ->
-            parser.parse(file)
+            parser.parse(file, "test")
         }
         runner.shutdown()
        /* val configJson = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
