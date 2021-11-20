@@ -36,7 +36,7 @@ class ReportParser(override val config: ParserConfigMessage.ParserConfig) : File
                 val chunk = lines.subList(min(acc.plus(1), boundary), boundary)
                 try {
                     val columnsJson = mapColsToJson(chunk)
-                    parserQueue.add(collection to columnsJson.toString().toByteArray())
+                    parserQueue.add(collection to columnsJson.toString().toByteArray(Charsets.UTF_8))
                 } catch (e: ArrayIndexOutOfBoundsException) {
                     LOG.error("Problem parsing chunk: \n$chunk\n)}")
                     e.printStackTrace()

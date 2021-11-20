@@ -49,7 +49,7 @@ class MongoRunnable(
                 val json = Utils.deserializeJsonByteArray(byteArray)
                 if (json.isJsonObject && !json.isJsonNull) {
                     val jsonObject = Utils.deserializeJsonObject(json)
-                    LOG.info("json loaded:\n${jsonObject}\n")
+                    //LOG.info("json loaded:\n${jsonObject}\n")
                     mongoDatabase.getCollection(collection)
                         .insertOne(Document(Utils.jsonToMap(jsonObject)))
                 } else if (json.isJsonArray && !json.isJsonNull && !json.asJsonArray.isEmpty) {

@@ -24,10 +24,8 @@ class JsonParser(override val config: ParserConfigMessage.ParserConfig): FilePar
         LOG.info(
             "\n*** finished parsing***\n " +
                     file.name +
-                    "\n***********************\n" +
-                    "\n${result}\n"
-        )
-        parserQueue.add(collection to result.toString().toByteArray())
+                    "\n***********************\n")
+        parserQueue.add(collection to result.toString().toByteArray(Charsets.UTF_8))
     }
 
     override fun getQueue(): ConcurrentLinkedQueue<Pair<String, ByteArray>> {

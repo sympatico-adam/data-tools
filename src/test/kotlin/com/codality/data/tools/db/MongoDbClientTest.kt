@@ -9,8 +9,10 @@ import org.slf4j.LoggerFactory
 import com.codality.data.tools.db.mongo.MongoDbClient
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
 import com.codality.data.tools.file.CsvLoaderTest
+import com.codality.data.tools.parser.CsvParser
 import com.codality.data.tools.parser.FileParser.Companion.findFilesInPath
 import com.codality.data.tools.parser.JsonParser
+import com.codality.data.tools.parser.ReportParser
 import com.google.gson.JsonPrimitive
 import de.bwaldvogel.mongo.MongoServer
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend
@@ -19,8 +21,6 @@ import org.junit.jupiter.api.Test
 import java.io.*
 import java.util.*
 import kotlin.time.ExperimentalTime
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 
 class MongoDbClientTest {
 
@@ -35,13 +35,13 @@ class MongoDbClientTest {
 
     lateinit var server: MongoServer
 
-    @BeforeEach
+    //@BeforeEach
     fun setup() {
         server = MongoServer(MemoryBackend())
         server.bind(config.db.mongo.host, config.db.mongo.port)
     }
 
-    @AfterEach
+    //@AfterEach
     fun tearDown() {
         server.shutdown()
     }
@@ -100,30 +100,45 @@ class MongoDbClientTest {
 
     @ExperimentalTime
     @Throws(Exception::class)
+    @Test
     fun runnableTest() {
-        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
-        val parser = JsonParser(config)
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-files.yml")!!.file))
+        val parser = CsvParser(config)
         val runner = MongoDocumentLoader(config, parser.getQueue())
         runner.startMongoDocumentLoader()
-        val files = findFilesInPath("data/", "json")
+        val files = findFilesInPath("data/", "csv")
         files.forEach { file ->
-            parser.parse(file, "test")
+            parser.parse(file, file.nameWithoutExtension)
         }
         runner.shutdown()
-       /* val configJson = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
+       val configJson = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("json-files.yml")!!.file))
         val jsonParser = JsonParser(configJson)
-        val jsonFiles = findFilesInPath("/home/user/QubesIncoming/work/data/mozilla", "json")
+        val jsonFiles = findFilesInPath("data/", "json")
         val jsonRunner = MongoDocumentLoader(configJson, jsonParser.getQueue())
         jsonRunner.startMongoDocumentLoader()
         jsonFiles.forEach { file ->
-            jsonParser.parse(file)
+            jsonParser.parse(file, file.nameWithoutExtension)
         }
         jsonRunner.shutdown()
         LOG.info("Collections: ${
             MongoDbClient(config.db.mongo.host, config.db.mongo.port)
                 .getDatabase(config.db.mongo.dbName)
                 .listCollectionNames().joinToString("\n")
-        }")*/
+        }")
+        val configReport = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("report-files.yml")!!.file))
+        val reportParser = ReportParser(configReport)
+        val reportFiles = findFilesInPath("data/", "txt")
+        val reportRunner = MongoDocumentLoader(configReport, reportParser.getQueue())
+        reportRunner.startMongoDocumentLoader()
+        reportFiles.forEach { file ->
+            reportParser.parse(file, file.nameWithoutExtension)
+        }
+        reportRunner.shutdown()
+        LOG.info("Collections: ${
+            MongoDbClient(config.db.mongo.host, config.db.mongo.port)
+                .getDatabase(config.db.mongo.dbName)
+                .listCollectionNames().joinToString("\n")
+        }")
     }
 
 }

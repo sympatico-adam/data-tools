@@ -3,10 +3,15 @@ package com.codality.data.tools.parser
 import com.codality.data.tools.proto.ParserConfigMessage
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import io.netty.util.internal.StringUtil
 import org.slf4j.LoggerFactory
 import java.io.*
 import java.lang.IndexOutOfBoundsException
+import java.nio.charset.CharsetDecoder
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.text.Charsets.UTF_16
+import kotlin.text.Charsets.UTF_8
+import org.yaml.snakeyaml.reader.UnicodeReader
 
 class CsvParser(override val config: ParserConfigMessage.ParserConfig): FileParser {
 
@@ -34,14 +39,12 @@ class CsvParser(override val config: ParserConfigMessage.ParserConfig): FilePars
         parseCsv(collectionName, inputStream)
     }
 
-    private fun parseCsv(collection: String, inputStream: InputStream) {
-        val reader = inputStream.bufferedReader()
+    private fun parseFields(headerLine: String?) {
         fields = if (config.format.csv.fieldsList.isNotEmpty()) {
             config.format.csv.fieldsList.associate {
                 it.name to it.sourceColumn
             }
         } else if (hasHeader) {
-            val headerLine = reader.readLine()
             if (headerLine != null) {
                 val headerColumns = regex.split(headerLine)
                 headerColumns.mapIndexed { idx, header ->
@@ -51,15 +54,23 @@ class CsvParser(override val config: ParserConfigMessage.ParserConfig): FilePars
                 return
         } else
             emptyMap()
-        reader.forEachLine { line ->
+    }
+
+    private fun parseCsv(collection: String, inputStream: InputStream) {
+        val reader = UnicodeReader(inputStream).buffered()
+        val lines = reader.readLines()
+        parseFields(lines.first())
+        lines.forEach { line ->
             if (line.isNotBlank()) {
                 val columns = regex.split(normalize(line))
-                try {
-                    val columnsJson = mapColsToJson(columns)
-                    parserQueue.add(collection to columnsJson.toString().toByteArray())
-                } catch (e: ArrayIndexOutOfBoundsException) {
-                    LOG.error("Problem parsing line: $line\nsplit lines: ${columns.joinToString("\n")}")
-                    e.printStackTrace()
+                if (!columns.containsAll(fields.keys)) {
+                    try {
+                        val columnsJson = mapColsToJson(columns)
+                        parserQueue.add(collection to columnsJson.asJsonObject.toString().toByteArray(UTF_8))
+                    } catch (e: ArrayIndexOutOfBoundsException) {
+                        LOG.error("Problem parsing line: $line\nsplit lines: ${columns.joinToString("\n")}")
+                        e.printStackTrace()
+                    }
                 }
             }
         }

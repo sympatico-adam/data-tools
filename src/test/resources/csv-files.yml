@@ -1,7 +1,7 @@
 format:
   csv:
     hasHeader: true
-    delimiterRegex: '(,|\s[|]\s|[a-zA-Z0-9]:\s)'
+    delimiterRegex: "[|,\\t]"
 db:
   mongo:
     host: "localhost"

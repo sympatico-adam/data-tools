@@ -2,6 +2,8 @@ package com.codality.data.tools.file
 
 import com.codality.data.tools.parser.CsvParser
 import com.codality.data.tools.config.ParserConf
+import com.codality.data.tools.db.mongo.MongoDocumentLoader
+import com.codality.data.tools.parser.FileParser
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import de.bwaldvogel.mongo.MongoServer
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.*
 import java.util.regex.Pattern
+import kotlin.time.ExperimentalTime
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -46,7 +49,6 @@ class CsvLoaderTest {
             File(CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file),
             "movies_metadata"
         )
-        LOG.info("Total messages parsed: ${parser.getQueue().size}")
         assertEquals(19949, parser.getQueue().size)
     }
 
@@ -56,7 +58,6 @@ class CsvLoaderTest {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yml")!!.file))
         val parser = CsvParser(config)
         parser.parse(File(CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file), "ratings_small")
-        LOG.info("Total messages: ${parser.getQueue().size}")
     }
 
     @Test
@@ -97,15 +98,18 @@ class CsvLoaderTest {
         LOG.info(json.toString())
     }
 
-    @Test
-    fun testNoFields() {
-        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("no-fields.yml")!!.file))
-        val line =
-            "False,,0,\"[{'id': 80, 'name': 'Crime'}, {'id': 18, 'name': 'Drama'}]\",,74295,tt0086199,fi,Rikos ja rangaistus,\"An adaptation of Dostoyevsky's novel, updated to present-day Helsinki. Slaughterhouse worker Rahikainen murders a man, and is forced to live with the consequences of his actions...\",1.473622,/aqu3HrpHaY8MR2ZOIfuUTWC3r3N.jpg,\"[{'name': 'Villealfa Filmproduction Oy', 'id': 2303}]\",\"[{'iso_3166_1': 'FI', 'name': 'Finland'}]\",1983-12-02,0,93.0,\"[{'iso_639_1': 'fi', 'name': 'suomi'}]\",Released,Crime and Punishment,Crime and Punishment,False,5.9,19"
-
+    @ExperimentalTime
+    fun parserTest() {
+        val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-files.yml")!!.file))
         val parser = CsvParser(config)
-        parser.parse("testNoFields", line)
-        LOG.info("Lines parsed: ${parser.getQueue().size}")
+        val loader = MongoDocumentLoader(config, parser.getQueue())
+        loader.startMongoDocumentLoader()
+        val files = FileParser.findFilesInPath("data/", "csv")
+        files.forEach { file ->
+            LOG.info("parsing test file: ${file.nameWithoutExtension}")
+            parser.parse(file, file.nameWithoutExtension)
+        }
+        loader.shutdown()
     }
 
 }
