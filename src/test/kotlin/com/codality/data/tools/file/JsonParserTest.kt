@@ -48,7 +48,7 @@ class JsonParserTest {
         val files = FileParser.findFilesInPath("src/test/resources/", "json")
         files.forEach { file ->
             LOG.info("parsing test file: ${file.nameWithoutExtension}")
-            parser.parse(file)
+            parser.parse(file, file.nameWithoutExtension)
         }
         loader.shutdown()
     }

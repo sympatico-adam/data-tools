@@ -9,14 +9,14 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class JsonParser(config: ParserConfigMessage.ParserConfig): FileParser {
+class JsonParser(override val config: ParserConfigMessage.ParserConfig): FileParser {
 
     private val parseNested = config.format.json.parseNested
     private val parserQueue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
 
     private val LOG: Logger = LoggerFactory.getLogger(JsonParser::class.java)
 
-    override fun parse(file: File) {
+    override fun parse(file: File, collection: String) {
         LOG.info("Streaming json file:\n${file.path}\n")
         val json = Utils.deserializeJsonFile(file)
         LOG.info("normalizing json structure:\n$json\n")
@@ -24,10 +24,8 @@ class JsonParser(config: ParserConfigMessage.ParserConfig): FileParser {
         LOG.info(
             "\n*** finished parsing***\n " +
                     file.name +
-                    "\n***********************\n" +
-                    "\n${result}\n"
-        )
-        parserQueue.add(file.nameWithoutExtension to result.toString().toByteArray())
+                    "\n***********************\n")
+        parserQueue.add(collection to result.toString().toByteArray(Charsets.UTF_8))
     }
 
     override fun getQueue(): ConcurrentLinkedQueue<Pair<String, ByteArray>> {
@@ -100,7 +98,10 @@ class JsonParser(config: ParserConfigMessage.ParserConfig): FileParser {
                 }
                 jsonResult
             } else {
-                jsonResult.add(element.key, element.value)
+                if (element.value.isJsonObject)
+                    jsonResult.add(element.key, parseNestedObjects(element.value.asJsonObject))
+                else
+                    jsonResult.add(element.key, element.value)
                 jsonResult
             }
 

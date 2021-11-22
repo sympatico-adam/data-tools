@@ -3,23 +3,28 @@ package com.codality.data.tools.parser
 import com.codality.data.tools.proto.ParserConfigMessage
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import io.netty.util.internal.StringUtil
 import org.slf4j.LoggerFactory
 import java.io.*
 import java.lang.IndexOutOfBoundsException
+import java.nio.charset.CharsetDecoder
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.text.Charsets.UTF_16
+import kotlin.text.Charsets.UTF_8
+import org.yaml.snakeyaml.reader.UnicodeReader
 
-class CsvParser(val config: ParserConfigMessage.ParserConfig): FileParser {
+class CsvParser(override val config: ParserConfigMessage.ParserConfig): FileParser {
 
     private val parserQueue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
-    private val regex = Regex(config.format.csv.regex)
+    private val regex = Regex(config.format.csv.delimiterRegex)
     private lateinit var fields: Map<String, Int>
     private val hasHeader = config.format.csv.hasHeader
 
     @Throws(IOException::class)
-    override fun parse(file: File) {
+    override fun parse(file: File, collection: String) {
         LOG.info("Streaming csv file:\n${file.path}\n")
         val inputStream = BufferedInputStream(FileInputStream(file))
-        parseCsv(file.nameWithoutExtension, inputStream)
+        parseCsv(collection, inputStream)
         LOG.info("*** finished parsing\n" +
                     "*** ${file.name} " +
                     "***********************")
@@ -34,14 +39,12 @@ class CsvParser(val config: ParserConfigMessage.ParserConfig): FileParser {
         parseCsv(collectionName, inputStream)
     }
 
-    private fun parseCsv(collectionName: String, inputStream: InputStream) {
-        val reader = inputStream.bufferedReader()
+    private fun parseFields(headerLine: String?) {
         fields = if (config.format.csv.fieldsList.isNotEmpty()) {
             config.format.csv.fieldsList.associate {
                 it.name to it.sourceColumn
             }
         } else if (hasHeader) {
-            val headerLine = reader.readLine()
             if (headerLine != null) {
                 val headerColumns = regex.split(headerLine)
                 headerColumns.mapIndexed { idx, header ->
@@ -51,15 +54,23 @@ class CsvParser(val config: ParserConfigMessage.ParserConfig): FileParser {
                 return
         } else
             emptyMap()
-        reader.forEachLine { line ->
+    }
+
+    private fun parseCsv(collection: String, inputStream: InputStream) {
+        val reader = UnicodeReader(inputStream).buffered()
+        val lines = reader.readLines()
+        parseFields(lines.first())
+        lines.forEach { line ->
             if (line.isNotBlank()) {
                 val columns = regex.split(normalize(line))
-                try {
-                    val columnsJson = mapColsToJson(columns)
-                    parserQueue.add(collectionName to columnsJson.toString().toByteArray())
-                } catch (e: ArrayIndexOutOfBoundsException) {
-                    LOG.error("Problem parsing line: $line\nsplit lines: ${columns.joinToString("\n")}")
-                    e.printStackTrace()
+                if (!columns.containsAll(fields.keys)) {
+                    try {
+                        val columnsJson = mapColsToJson(columns)
+                        parserQueue.add(collection to columnsJson.asJsonObject.toString().toByteArray(UTF_8))
+                    } catch (e: ArrayIndexOutOfBoundsException) {
+                        LOG.error("Problem parsing line: $line\nsplit lines: ${columns.joinToString("\n")}")
+                        e.printStackTrace()
+                    }
                 }
             }
         }

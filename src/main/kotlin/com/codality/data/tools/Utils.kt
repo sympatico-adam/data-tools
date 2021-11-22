@@ -3,11 +3,15 @@ package com.codality.data.tools
 import com.google.gson.*
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
+import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileReader
 import java.io.InputStreamReader
+import java.nio.charset.CharsetDecoder
 import java.text.SimpleDateFormat
+import kotlin.text.Charsets.UTF_8
+import org.yaml.snakeyaml.reader.UnicodeReader
 
 object Utils {
 
@@ -18,6 +22,8 @@ object Utils {
         .setFieldNamingStrategy { field ->
             field?.name?.replace(".", "_")
         }
+        .enableComplexMapKeySerialization()
+        .setPrettyPrinting()
         .create()
 
     fun deserializeJsonObject(jsonElement: JsonElement): JsonObject {
@@ -34,11 +40,11 @@ object Utils {
     }
 
     fun deserializeJsonString(jsonString: String): JsonElement {
-        return deserializeJsonByteArray(jsonString.toByteArray())
+        return deserializeJsonByteArray(jsonString.toByteArray(UTF_8))
     }
 
     fun deserializeJsonByteArray(byteArray: ByteArray): JsonElement {
-        val jsonReader = gsonBuilder.newJsonReader(InputStreamReader(ByteArrayInputStream(byteArray)))
+        val jsonReader = gsonBuilder.newJsonReader(UnicodeReader(ByteArrayInputStream(byteArray)).buffered())
         return parseJsonReader(jsonReader)
     }
 

@@ -76,7 +76,8 @@ dependencies {
 tasks {
     test {
         useJUnitPlatform()
-        logging.captureStandardOutput(LogLevel.INFO)
+        testLogging.showExceptions = true
+        testLogging.showCauses = true
         testLogging.showStandardStreams = true
     }
 }

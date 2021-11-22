@@ -1,7 +1,7 @@
 format:
-  csv:
-    hasHeader: true
-    delimiterRegex: "[|,\\t]"
+  report:
+    lineSeparator: '----------'
+    delimiterRegex: "(?!^[a-zA-Z0-9]+):\\s"
 db:
   mongo:
     host: "localhost"
