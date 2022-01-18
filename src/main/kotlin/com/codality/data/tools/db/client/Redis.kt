@@ -1,10 +1,10 @@
-package com.codality.data.tools.db.redis
+package com.codality.data.tools.db.client
 
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
 import io.lettuce.core.resource.ClientResources
 
-class RedisDbClient {
+class Redis {
     @Synchronized
     fun connect(clientResources: ClientResources, redisURI: RedisURI): RedisClient? {
         if (redisClient == null) {

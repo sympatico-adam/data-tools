@@ -1,42 +1,44 @@
-package com.codality.data.tools.parser
+package com.codality.data.tools.parser.serialize
 
+import com.codality.data.tools.parser.Serializer
 import com.codality.data.tools.proto.ParserConfigMessage
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import io.netty.util.internal.StringUtil
 import org.slf4j.LoggerFactory
 import java.io.*
 import java.lang.IndexOutOfBoundsException
-import java.nio.charset.CharsetDecoder
-import java.util.concurrent.ConcurrentLinkedQueue
-import kotlin.text.Charsets.UTF_16
-import kotlin.text.Charsets.UTF_8
-import org.yaml.snakeyaml.reader.UnicodeReader
 
-class CsvParser(override val config: ParserConfigMessage.ParserConfig): FileParser {
+class Csv(val config: ParserConfigMessage.ParserConfig): Serializer {
 
-    private val parserQueue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
     private val regex = Regex(config.format.csv.delimiterRegex)
     private lateinit var fields: Map<String, Int>
     private val hasHeader = config.format.csv.hasHeader
 
     @Throws(IOException::class)
-    override fun parse(file: File, collection: String) {
-        LOG.info("Streaming csv file:\n${file.path}\n")
-        val inputStream = BufferedInputStream(FileInputStream(file))
-        parseCsv(collection, inputStream)
-        LOG.info("*** finished parsing\n" +
-                    "*** ${file.name} " +
-                    "***********************")
-    }
-
-    override fun getQueue(): ConcurrentLinkedQueue<Pair<String, ByteArray>> {
-        return parserQueue
-    }
-
-    fun parse(collectionName: String, csv: String) {
-        val inputStream = ByteArrayInputStream(csv.toByteArray())
-        parseCsv(collectionName, inputStream)
+    override fun parse(inputStream: InputStream): JsonElement {
+        val reader = inputStream.bufferedReader()
+        val result = reader.useLines { lines ->
+            lines.foldIndexed(JsonArray()) { idx, acc, line ->
+                if (idx == 0)
+                    parseFields(line)
+                if (line.isNotBlank()) {
+                    val columns = regex.split(normalize(line))
+                    if (!columns.containsAll(fields.keys)) {
+                        try {
+                            val columnsJson = mapColsToJson(columns)
+                            acc.add(columnsJson.asJsonObject)
+                        } catch (e: ArrayIndexOutOfBoundsException) {
+                            LOG.error("Problem parsing line: $line\nsplit lines: ${columns.joinToString("\n")}")
+                            e.printStackTrace()
+                        }
+                    }
+                }
+                acc
+            }
+        }
+        return result
     }
 
     private fun parseFields(headerLine: String?) {
@@ -54,26 +56,6 @@ class CsvParser(override val config: ParserConfigMessage.ParserConfig): FilePars
                 return
         } else
             emptyMap()
-    }
-
-    private fun parseCsv(collection: String, inputStream: InputStream) {
-        val reader = UnicodeReader(inputStream).buffered()
-        val lines = reader.readLines()
-        parseFields(lines.first())
-        lines.forEach { line ->
-            if (line.isNotBlank()) {
-                val columns = regex.split(normalize(line))
-                if (!columns.containsAll(fields.keys)) {
-                    try {
-                        val columnsJson = mapColsToJson(columns)
-                        parserQueue.add(collection to columnsJson.asJsonObject.toString().toByteArray(UTF_8))
-                    } catch (e: ArrayIndexOutOfBoundsException) {
-                        LOG.error("Problem parsing line: $line\nsplit lines: ${columns.joinToString("\n")}")
-                        e.printStackTrace()
-                    }
-                }
-            }
-        }
     }
 
     @Throws(ArrayIndexOutOfBoundsException::class)
@@ -115,6 +97,6 @@ class CsvParser(override val config: ParserConfigMessage.ParserConfig): FilePars
     }
 
     companion object {
-        private val LOG = LoggerFactory.getLogger(CsvParser::class.java)
+        private val LOG = LoggerFactory.getLogger(Csv::class.java)
     }
 }

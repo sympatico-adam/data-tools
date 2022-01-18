@@ -1,54 +1,43 @@
-package com.codality.data.tools.parser
+package com.codality.data.tools.parser.serialize
 
 import com.codality.data.tools.Utils
 import com.codality.data.tools.Utils.createJsonObject
+import com.codality.data.tools.Utils.marshallJsonSequenceToJsonArray
+import com.codality.data.tools.parser.Serializer
 import com.codality.data.tools.proto.ParserConfigMessage
 import com.google.gson.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.File
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.io.InputStream
+import java.io.InputStreamReader
 
-class JsonParser(override val config: ParserConfigMessage.ParserConfig): FileParser {
+class Json(val config: ParserConfigMessage.ParserConfig): Serializer {
 
     private val parseNested = config.format.json.parseNested
-    private val parserQueue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
 
-    private val LOG: Logger = LoggerFactory.getLogger(JsonParser::class.java)
-
-    override fun parse(file: File, collection: String) {
-        LOG.info("Streaming json file:\n${file.path}\n")
-        val json = Utils.deserializeJsonFile(file)
-        LOG.info("normalizing json structure:\n$json\n")
-        val result = parseElements(json)
-        LOG.info(
-            "\n*** finished parsing***\n " +
-                    file.name +
-                    "\n***********************\n")
-        parserQueue.add(collection to result.toString().toByteArray(Charsets.UTF_8))
+    private fun gsonParseJson(inputStream: InputStream): JsonElement {
+        val jsonParser = JsonStreamParser(InputStreamReader(inputStream))
+        val parsedJson = jsonParser.asSequence()
+        return marshallJsonSequenceToJsonArray(parsedJson)
     }
 
-    override fun getQueue(): ConcurrentLinkedQueue<Pair<String, ByteArray>> {
-        return parserQueue
-    }
-
-
-    private fun parseElements(jsonElement: JsonElement): JsonElement {
-        return if (jsonElement.isJsonObject) {
+    override fun parse(inputStream: InputStream): JsonElement {
+        val json = Utils.deserializeJsonFile(inputStream)
+        return if (json.isJsonObject) {
             if (parseNested)
-                parseNestedObjects(jsonElement.asJsonObject)
+                parseNestedObjects(json.asJsonObject)
             else
-                parseObject(jsonElement.asJsonObject)
+                parseObject(json.asJsonObject)
         }
-        else if (jsonElement.isJsonArray)
-            jsonElement.asJsonArray.fold(JsonArray()) { acc, element ->
+        else if (json.isJsonArray)
+            json.asJsonArray.fold(JsonArray()) { acc, element ->
                 if (element.isJsonObject)
                     if (parseNested)
                         acc.add(parseNestedObjects(element.asJsonObject))
                     else
                         acc.add(parseObject(element.asJsonObject))
                 else if (element.isJsonArray && element.asJsonArray.size() == 1)
-                    acc.add(parseElements(element))
+                    acc.add(parse(element.toString().byteInputStream()))
                 else if (element.isJsonArray && element.asJsonArray.isEmpty)
                     acc.add(JsonNull.INSTANCE)
                 else
@@ -56,7 +45,7 @@ class JsonParser(override val config: ParserConfigMessage.ParserConfig): FilePar
                 acc
             }
         else
-            createJsonObject("value", jsonElement)
+            createJsonObject("value", json)
     }
 
     private fun parseObject(jsonObject: JsonObject): JsonObject {
@@ -148,5 +137,9 @@ class JsonParser(override val config: ParserConfigMessage.ParserConfig): FilePar
                 }
                 hierarchy
             } else emptyList()
+    }
+
+    companion object {
+        private val LOG: Logger = LoggerFactory.getLogger(Json::class.java)
     }
 }

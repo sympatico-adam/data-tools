@@ -7,16 +7,13 @@ import io.lettuce.core.RedisURI
 import io.lettuce.core.api.sync.RedisCommands
 import io.lettuce.core.codec.ByteArrayCodec
 import io.lettuce.core.resource.ClientResources
-import com.codality.data.tools.db.redis.RedisDbClient
-import org.junit.jupiter.api.AfterAll
+import com.codality.data.tools.db.client.Redis
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
-import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class RedisDbClientTest {
+class RedisTest {
     private val redisQueue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
 
     @Test
@@ -24,8 +21,8 @@ class RedisDbClientTest {
     fun setTest() {
         val server: RedisServer = RedisServer.newRedisServer(6688)
         server.start()
-        val redisDbClient = RedisDbClient()
-        val connection: RedisCommands<ByteArray, ByteArray> = redisDbClient.connect(
+        val redis = Redis()
+        val connection: RedisCommands<ByteArray, ByteArray> = redis.connect(
             ClientResources.builder()
                 .build(),
             RedisURI.builder()

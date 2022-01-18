@@ -1,5 +1,6 @@
 package com.codality.data.tools.db.mongo
 
+import com.codality.data.tools.db.client.Mongo
 import com.codality.data.tools.proto.ParserConfigMessage
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -14,7 +15,7 @@ class MongoDocumentLoader(
 
     private var executorService: ExecutorService = Executors.newCachedThreadPool()
     private var runnables: MutableList<MongoRunnable> = mutableListOf()
-    val mongoClient = MongoDbClient(config.db.mongo.host, config.db.mongo.port)
+    private val mongoClient = Mongo(config.db.mongo.host, config.db.mongo.port)
 
     fun startMongoDocumentLoader() {
         val workerCount = config.db.mongo.workerCount

@@ -3,12 +3,11 @@ package com.codality.data.tools
 import com.google.gson.*
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
-import java.io.BufferedInputStream
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileReader
+import java.io.InputStream
 import java.io.InputStreamReader
-import java.nio.charset.CharsetDecoder
 import java.text.SimpleDateFormat
 import kotlin.text.Charsets.UTF_8
 import org.yaml.snakeyaml.reader.UnicodeReader
@@ -34,8 +33,8 @@ object Utils {
         return gsonBuilder.fromJson(jsonElement, JsonArray::class.java)
     }
 
-    fun deserializeJsonFile(file: File): JsonElement {
-        val jsonReader = gsonBuilder.newJsonReader(FileReader(file))
+    fun deserializeJsonFile(inputStream: InputStream): JsonElement {
+        val jsonReader = gsonBuilder.newJsonReader(InputStreamReader(inputStream))
         return parseJsonReader(jsonReader)
     }
 
@@ -46,6 +45,13 @@ object Utils {
     fun deserializeJsonByteArray(byteArray: ByteArray): JsonElement {
         val jsonReader = gsonBuilder.newJsonReader(UnicodeReader(ByteArrayInputStream(byteArray)).buffered())
         return parseJsonReader(jsonReader)
+    }
+
+    fun marshallJsonSequenceToJsonArray(jsonSequence: Sequence<JsonElement>): JsonArray {
+        return jsonSequence.fold(JsonArray()) { acc, json ->
+            acc.add(json)
+            acc
+        }
     }
 
     private fun parseJsonReader(jsonReader: JsonReader): JsonElement {

@@ -1,63 +1,47 @@
 package com.codality.data.tools.file
 
-import com.codality.data.tools.parser.CsvParser
 import com.codality.data.tools.config.ParserConf
 import com.codality.data.tools.db.mongo.MongoDocumentLoader
+import com.codality.data.tools.parser.FileFormat
 import com.codality.data.tools.parser.FileParser
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import de.bwaldvogel.mongo.MongoServer
-import de.bwaldvogel.mongo.backend.memory.MemoryBackend
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.*
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.regex.Pattern
 import kotlin.time.ExperimentalTime
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 
 class CsvLoaderTest {
 
     companion object {
         private val LOG = LoggerFactory.getLogger(CsvLoaderTest::class.java)
+
+        private val config =
+            ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
     }
 
-    private val config =
-        ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("mongo-config.yml")!!.file))
-    lateinit var server: MongoServer
 
-    @BeforeEach
-    fun setup() {
-        server = MongoServer(MemoryBackend())
-        server.bind(config.db.mongo.host, config.db.mongo.port)
-    }
-
-    @AfterEach
-    fun tearDown() {
-        server.shutdown()
-    }
 
     @Throws(IOException::class)
     @Test
     fun jsonizeBrokenCsv() {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-metadata.yml")!!.file))
-        val parser = CsvParser(config)
-        parser.parse(
-            File(CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file),
-            "movies_metadata"
+        val parser = FileParser(FileFormat.CSV, config)
+        val result = parser.parse(
+            File(CsvLoaderTest::class.java.classLoader.getResource("movies_metadata_small_fixed.csv")!!.file)
         )
-        assertEquals(19949, parser.getQueue().size)
+        assertEquals(19949, result.asJsonArray.count())
     }
 
     @Throws(IOException::class)
     @Test
     fun jsonStandardizeCsv() {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-ratings.yml")!!.file))
-        val parser = CsvParser(config)
-        parser.parse(File(CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file), "ratings_small")
+        val parser = FileParser(FileFormat.CSV, config)
+        val ratingsJson = parser.parse(File(CsvLoaderTest::class.java.classLoader.getResource("ratings_small.csv")!!.file))
     }
 
     @Test
@@ -101,13 +85,14 @@ class CsvLoaderTest {
     @ExperimentalTime
     fun parserTest() {
         val config = ParserConf().load(File(CsvLoaderTest::class.java.classLoader.getResource("csv-files.yml")!!.file))
-        val parser = CsvParser(config)
-        val loader = MongoDocumentLoader(config, parser.getQueue())
+        val parser = FileParser(FileFormat.CSV, config)
+        val queue = ConcurrentLinkedQueue<Pair<String, ByteArray>>()
+        val loader = MongoDocumentLoader(config, queue)
         loader.startMongoDocumentLoader()
-        val files = FileParser.findFilesInPath("data/", "csv")
+        val files = parser.findFilesInPath("src/test/resources/", "csv")
         files.forEach { file ->
             LOG.info("parsing test file: ${file.nameWithoutExtension}")
-            parser.parse(file, file.nameWithoutExtension)
+            queue.add(file.nameWithoutExtension to parser.parse(file).toString().toByteArray())
         }
         loader.shutdown()
     }

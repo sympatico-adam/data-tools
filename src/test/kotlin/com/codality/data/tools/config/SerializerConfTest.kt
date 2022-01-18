@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.test.assertTrue
 
-internal class ParserConfTest {
+internal class SerializerConfTest {
 
-    private val LOG: Logger = LoggerFactory.getLogger(ParserConfTest::class.java)
+    private val LOG: Logger = LoggerFactory.getLogger(SerializerConfTest::class.java)
 
     @Test
     fun testSSaveDefault() {
@@ -24,7 +24,7 @@ internal class ParserConfTest {
 
     @Test
     fun testSSave() {
-        val file = File(ParserConfTest::class.java.classLoader.getResource("csv-metadata.yml")!!.toURI())
+        val file = File(SerializerConfTest::class.java.classLoader.getResource("csv-metadata.yml")!!.toURI())
         val parserConfig = ParserConf().load(file)
         val newFile = File("./conf")
         ParserConf().save(parserConfig, newFile.path)
@@ -33,7 +33,7 @@ internal class ParserConfTest {
 
     @Test
     fun testLoad() {
-        val file = File(ParserConfTest::class.java.classLoader.getResource("csv-metadata.yml")!!.toURI())
+        val file = File(SerializerConfTest::class.java.classLoader.getResource("csv-metadata.yml")!!.toURI())
         val parserConf = ParserConf().load(file)
         assertEquals("localhost", parserConf.db!!.mongo!!.host)
         assertEquals("default", parserConf.db!!.mongo!!.dbName)

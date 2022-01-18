@@ -53,9 +53,8 @@ class MongoRunnable(
                     mongoDatabase.getCollection(collection)
                         .insertOne(Document(Utils.jsonToMap(jsonObject)))
                 } else if (json.isJsonArray && !json.isJsonNull && !json.asJsonArray.isEmpty) {
-                    val documents = mutableListOf<Document>()
-                    Utils.deserializeJsonArray(json)
-                        .fold(documents) { acc, element ->
+                    val documents = Utils.deserializeJsonArray(json)
+                        .fold(mutableListOf<Document>()) { acc, element ->
                             if (element.isJsonObject)
                                 acc.add(Document(Utils.jsonToMap(element)))
                             acc
